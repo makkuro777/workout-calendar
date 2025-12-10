@@ -26,11 +26,14 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 8px;
+      gap: 6px;
     }
 
     .month-label {
-      font-size: 20px;
+      font-size: 18px;
       font-weight: bold;
+      text-align: center;
+      flex: 1;
     }
 
     .nav-btn {
@@ -39,6 +42,15 @@
       padding: 6px 10px;
       border-radius: 6px;
       cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .month-select {
+      font-size: 12px;
+      padding: 4px 6px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      background-color: #fff;
     }
 
     table {
@@ -169,7 +181,7 @@
     .set-row {
       border: 1px solid #ddd;
       border-radius: 6px;
-      padding: 6px 32px 6px 6px; /* 右上の🗑用に右側を広めに取る */
+      padding: 6px 32px 6px 6px; /* 右上🗑用に余白 */
       background: #fff;
       position: relative;
     }
@@ -202,7 +214,7 @@
       right: 6px;
       background: none;
       border: none;
-      font-size: 16px; /* 中くらい */
+      font-size: 16px;
       color: #d32f2f;
       cursor: pointer;
       padding: 0;
@@ -250,10 +262,11 @@
 
 <body>
 
-<div class="container">
+<div class="container" id="calendar-container">
   <div class="calendar-header">
     <button id="prev" class="nav-btn">＜</button>
     <div class="month-label" id="month-label"></div>
+    <select id="month-select" class="month-select"></select>
     <button id="next" class="nav-btn">＞</button>
   </div>
 
@@ -288,12 +301,14 @@ let current = new Date();
 const events = JSON.parse(localStorage.getItem("workout") || "{}");
 
 const monthLabel = document.getElementById("month-label");
+const monthSelect = document.getElementById("month-select");
 const body = document.getElementById("calendar-body");
 const sheet = document.getElementById("sheet");
 const note = document.getElementById("note");
 const sheetTitle = document.getElementById("sheet-title");
 const exerciseList = document.getElementById("exercise-list");
 const addExerciseBtn = document.getElementById("add-exercise");
+const calendarContainer = document.getElementById("calendar-container");
 let selectedDateKey = "";
 
 let noteDebounceTimer = null;
@@ -326,6 +341,32 @@ function normalizeEvent(raw) {
 
   return { exercises: exs, note: raw.note || "" };
 }
+
+/* ------------------------------------------------------
+   年月プルダウン初期化
+------------------------------------------------------ */
+(function initMonthSelect() {
+  const baseYear = new Date().getFullYear();
+  const startYear = baseYear - 5;
+  const endYear = baseYear + 5;
+  for (let y = startYear; y <= endYear; y++) {
+    for (let m = 0; m < 12; m++) {
+      const opt = document.createElement("option");
+      const value = `${y}-${String(m+1).padStart(2,"0")}`;
+      opt.value = value;
+      opt.textContent = `${y}年 ${m+1}月`;
+      monthSelect.appendChild(opt);
+    }
+  }
+
+  monthSelect.addEventListener("change", () => {
+    const [yStr, mStr] = monthSelect.value.split("-");
+    const y = parseInt(yStr, 10);
+    const m = parseInt(mStr, 10) - 1;
+    current = new Date(y, m, 1);
+    render();
+  });
+})();
 
 /* ------------------------------------------------------
    セレクト生成（レップ数）
@@ -378,7 +419,6 @@ function createSetRow(container, data) {
   const fields = document.createElement("div");
   fields.className = "set-fields";
 
-  // 重量：数値入力（手入力）
   const weightInput = document.createElement("input");
   weightInput.type = "number";
   weightInput.inputMode = "decimal";
@@ -518,11 +558,18 @@ function saveCurrentDayDebounced() {
 }
 
 /* ------------------------------------------------------
-   日付クリック → シート開閉
+   日付クリック → シート開閉（同じ日で閉じる）
 ------------------------------------------------------ */
 function handleDateClick(key) {
   if (sheet.classList.contains("open")) {
-    if (key === selectedDateKey) return;
+    if (key === selectedDateKey) {
+      // 同じ日をもう一度タップ → 閉じる
+      sheet.classList.remove("open");
+      selectedDateKey = "";
+      render(); // ハイライト解除
+      return;
+    }
+    // 別の日 → 一度閉じてから開き直す
     sheet.classList.remove("open");
     setTimeout(() => openSheet(key), 250);
   } else {
@@ -559,27 +606,78 @@ addExerciseBtn.addEventListener("click", () => {
   saveCurrentDay();
 });
 
-// select（種目・レップ数）が変わったら即保存
 sheet.addEventListener("change", e => {
   if (e.target.matches("select")) saveCurrentDay();
 });
 
-// 重量入力＆メモはデバウンス保存
 sheet.addEventListener("input", e => {
   if (e.target.matches(".weight-input")) {
     saveCurrentDayDebounced();
   }
 });
+
 note.addEventListener("input", () => saveCurrentDayDebounced());
+
+/* ------------------------------------------------------
+   スワイプで月移動（左右）
+------------------------------------------------------ */
+let touchStartX = 0;
+let touchStartY = 0;
+let touchStartTime = 0;
+
+calendarContainer.addEventListener("touchstart", (e) => {
+  if (e.touches.length !== 1) return;
+  const t = e.touches[0];
+  touchStartX = t.clientX;
+  touchStartY = t.clientY;
+  touchStartTime = Date.now();
+});
+
+calendarContainer.addEventListener("touchend", (e) => {
+  if (!touchStartTime) return;
+  const t = e.changedTouches[0];
+  const dx = t.clientX - touchStartX;
+  const dy = t.clientY - touchStartY;
+  const dt = Date.now() - touchStartTime;
+
+  const minDistance = 40;
+  const maxTime = 600;
+
+  if (dt < maxTime && Math.abs(dx) > minDistance && Math.abs(dx) > Math.abs(dy)) {
+    if (dx < 0) {
+      // 左スワイプ → 次の月
+      current.setMonth(current.getMonth() + 1);
+    } else {
+      // 右スワイプ → 前の月
+      current.setMonth(current.getMonth() - 1);
+    }
+    render();
+  }
+  touchStartTime = 0;
+});
 
 /* ------------------------------------------------------
    カレンダー描画
 ------------------------------------------------------ */
+function updateMonthUI() {
+  const y = current.getFullYear();
+  const m = current.getMonth();
+  monthLabel.textContent = `${y}年 ${m+1}月`;
+  const value = `${y}-${String(m+1).padStart(2,"0")}`;
+  if (monthSelect) {
+    // 該当がなかったら何もしない（範囲外の場合）
+    if ([...monthSelect.options].some(o => o.value === value)) {
+      monthSelect.value = value;
+    }
+  }
+}
+
 function render() {
   const y = current.getFullYear();
   const m = current.getMonth();
 
-  monthLabel.textContent = `${y}年 ${m+1}月`;
+  updateMonthUI();
+
   body.innerHTML = "";
 
   const first = new Date(y, m, 1);
@@ -648,7 +746,7 @@ function getPreviewText(raw) {
   return "";
 }
 
-/* 月移動 */
+/* 月移動ボタン */
 document.getElementById("prev").onclick = () => {
   current.setMonth(current.getMonth()-1);
   render();
