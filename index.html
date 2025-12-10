@@ -53,10 +53,16 @@
       background-color: #fff;
     }
 
+    .calendar-wrapper {
+      overflow: hidden; /* 横スワイプ時にカレンダーがはみ出さないように */
+      width: 100%;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
       table-layout: fixed;
+      transition: transform 0.0s ease; /* 初期はトランジションなし、スワイプ時に制御 */
     }
 
     th {
@@ -181,7 +187,7 @@
     .set-row {
       border: 1px solid #ddd;
       border-radius: 6px;
-      padding: 6px 32px 6px 6px; /* 右上🗑用に余白 */
+      padding: 6px 32px 6px 6px; /* 右上🗑用 */
       background: #fff;
       position: relative;
     }
@@ -270,15 +276,17 @@
     <button id="next" class="nav-btn">＞</button>
   </div>
 
-  <table>
-    <thead>
-      <tr>
-        <th>日</th><th>月</th><th>火</th><th>水</th>
-        <th>木</th><th>金</th><th>土</th>
-      </tr>
-    </thead>
-    <tbody id="calendar-body"></tbody>
-  </table>
+  <div class="calendar-wrapper" id="calendar-wrapper">
+    <table id="calendar-table">
+      <thead>
+        <tr>
+          <th>日</th><th>月</th><th>火</th><th>水</th>
+          <th>木</th><th>金</th><th>土</th>
+        </tr>
+      </thead>
+      <tbody id="calendar-body"></tbody>
+    </table>
+  </div>
 </div>
 
 <div id="sheet" class="sheet">
@@ -308,7 +316,8 @@ const note = document.getElementById("note");
 const sheetTitle = document.getElementById("sheet-title");
 const exerciseList = document.getElementById("exercise-list");
 const addExerciseBtn = document.getElementById("add-exercise");
-const calendarContainer = document.getElementById("calendar-container");
+const calendarWrapper = document.getElementById("calendar-wrapper");
+const calendarTable = document.getElementById("calendar-table");
 let selectedDateKey = "";
 
 let noteDebounceTimer = null;
@@ -563,13 +572,11 @@ function saveCurrentDayDebounced() {
 function handleDateClick(key) {
   if (sheet.classList.contains("open")) {
     if (key === selectedDateKey) {
-      // 同じ日をもう一度タップ → 閉じる
       sheet.classList.remove("open");
       selectedDateKey = "";
-      render(); // ハイライト解除
+      render();
       return;
     }
-    // 別の日 → 一度閉じてから開き直す
     sheet.classList.remove("open");
     setTimeout(() => openSheet(key), 250);
   } else {
@@ -619,41 +626,79 @@ sheet.addEventListener("input", e => {
 note.addEventListener("input", () => saveCurrentDayDebounced());
 
 /* ------------------------------------------------------
-   スワイプで月移動（左右）
+   スワイプで月移動（カレンダーが指についてくる版）
 ------------------------------------------------------ */
-let touchStartX = 0;
-let touchStartY = 0;
-let touchStartTime = 0;
+let swipeStartX = 0;
+let swipeStartY = 0;
+let isSwiping = false;
 
-calendarContainer.addEventListener("touchstart", (e) => {
+calendarWrapper.addEventListener("touchstart", (e) => {
   if (e.touches.length !== 1) return;
   const t = e.touches[0];
-  touchStartX = t.clientX;
-  touchStartY = t.clientY;
-  touchStartTime = Date.now();
+  swipeStartX = t.clientX;
+  swipeStartY = t.clientY;
+  isSwiping = true;
+  calendarTable.style.transition = "none"; // ドラッグ中はトランジションなし
 });
 
-calendarContainer.addEventListener("touchend", (e) => {
-  if (!touchStartTime) return;
+calendarWrapper.addEventListener("touchmove", (e) => {
+  if (!isSwiping) return;
+  const t = e.touches[0];
+  const dx = t.clientX - swipeStartX;
+  const dy = t.clientY - swipeStartY;
+
+  // 縦スクロールのつもりなら無視
+  if (Math.abs(dy) > Math.abs(dx)) return;
+
+  // カレンダーを指に追従させる
+  calendarTable.style.transform = `translateX(${dx}px)`;
+});
+
+calendarWrapper.addEventListener("touchend", (e) => {
+  if (!isSwiping) return;
+  isSwiping = false;
+
   const t = e.changedTouches[0];
-  const dx = t.clientX - touchStartX;
-  const dy = t.clientY - touchStartY;
-  const dt = Date.now() - touchStartTime;
+  const dx = t.clientX - swipeStartX;
+  const dy = t.clientY - swipeStartY;
 
-  const minDistance = 40;
-  const maxTime = 600;
+  calendarTable.style.transition = "transform 0.2s ease";
 
-  if (dt < maxTime && Math.abs(dx) > minDistance && Math.abs(dx) > Math.abs(dy)) {
+  const threshold = 60; // この距離以上ならページ送り
+
+  if (Math.abs(dx) > threshold && Math.abs(dx) > Math.abs(dy)) {
     if (dx < 0) {
       // 左スワイプ → 次の月
-      current.setMonth(current.getMonth() + 1);
+      calendarTable.style.transform = "translateX(-100%)";
+      setTimeout(() => {
+        current.setMonth(current.getMonth() + 1);
+        render();
+        calendarTable.style.transition = "none";
+        calendarTable.style.transform = "translateX(100%)"; // 右側から入ってくる位置
+        requestAnimationFrame(() => {
+          // 次のフレームでアニメーションさせる
+          calendarTable.style.transition = "transform 0.2s ease";
+          calendarTable.style.transform = "translateX(0)";
+        });
+      }, 200);
     } else {
       // 右スワイプ → 前の月
-      current.setMonth(current.getMonth() - 1);
+      calendarTable.style.transform = "translateX(100%)";
+      setTimeout(() => {
+        current.setMonth(current.getMonth() - 1);
+        render();
+        calendarTable.style.transition = "none";
+        calendarTable.style.transform = "translateX(-100%)"; // 左側から入ってくる位置
+        requestAnimationFrame(() => {
+          calendarTable.style.transition = "transform 0.2s ease";
+          calendarTable.style.transform = "translateX(0)";
+        });
+      }, 200);
     }
-    render();
+  } else {
+    // 閾値未満 → 元に戻す
+    calendarTable.style.transform = "translateX(0)";
   }
-  touchStartTime = 0;
 });
 
 /* ------------------------------------------------------
@@ -664,11 +709,8 @@ function updateMonthUI() {
   const m = current.getMonth();
   monthLabel.textContent = `${y}年 ${m+1}月`;
   const value = `${y}-${String(m+1).padStart(2,"0")}`;
-  if (monthSelect) {
-    // 該当がなかったら何もしない（範囲外の場合）
-    if ([...monthSelect.options].some(o => o.value === value)) {
-      monthSelect.value = value;
-    }
+  if ([...monthSelect.options].some(o => o.value === value)) {
+    monthSelect.value = value;
   }
 }
 
@@ -677,7 +719,6 @@ function render() {
   const m = current.getMonth();
 
   updateMonthUI();
-
   body.innerHTML = "";
 
   const first = new Date(y, m, 1);
