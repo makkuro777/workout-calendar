@@ -169,7 +169,7 @@
     .set-row {
       border: 1px solid #ddd;
       border-radius: 6px;
-      padding: 6px;
+      padding: 6px 32px 6px 6px; /* 右上の🗑用に右側を広めに取る */
       background: #fff;
       position: relative;
     }
@@ -186,12 +186,14 @@
       align-items: center;
     }
 
+    .set-fields input,
     .set-fields select {
       font-size: 12px;
       padding: 4px;
       border-radius: 6px;
       border: 1px solid #ccc;
       flex: 1;
+      box-sizing: border-box;
     }
 
     .delete-set-btn {
@@ -200,10 +202,11 @@
       right: 6px;
       background: none;
       border: none;
-      font-size: 16px;
+      font-size: 16px; /* 中くらい */
       color: #d32f2f;
       cursor: pointer;
       padding: 0;
+      line-height: 1;
     }
 
     .add-set-btn {
@@ -305,7 +308,6 @@ const exerciseCategories = [
   { label: "腕", items: ["インクラインダンベルカール","ケーブルプレスダウン","オーバーヘッドエクステンション"] }
 ];
 
-
 function dateKey(y, m, d) {
   return `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
 }
@@ -326,26 +328,19 @@ function normalizeEvent(raw) {
 }
 
 /* ------------------------------------------------------
-   セレクト生成
+   セレクト生成（レップ数）
 ------------------------------------------------------ */
 function fillRepsSelect(sel, selected) {
   sel.innerHTML = "";
   sel.innerHTML += `<option value="">レップ数</option>`;
   for (let i = 1; i <= repsMax; i++) {
-    sel.innerHTML += `<option value="${i}" ${selected==i?"selected":""}>${i}回</option>`;
+    sel.innerHTML += `<option value="${i}" ${String(selected)===String(i)?"selected":""}>${i}回</option>`;
   }
 }
 
-function fillWeightSelect(sel, selected) {
-  sel.innerHTML = "";
-  sel.innerHTML += `<option value="">重量(kg)</option>`;
-  for (let i = 0; i <= 80; i++) {
-    const w = i * 2.5;
-    const label = Number.isInteger(w) ? w.toFixed(0) : w.toFixed(1);
-    sel.innerHTML += `<option value="${label}" ${selected==label?"selected":""}>${label}</option>`;
-  }
-}
-
+/* ------------------------------------------------------
+   種目セレクト
+------------------------------------------------------ */
 function createExerciseSelect(selected) {
   const sel = document.createElement("select");
   sel.className = "exercise-select";
@@ -369,7 +364,7 @@ function createExerciseSelect(selected) {
 }
 
 /* ------------------------------------------------------
-   セット行（🗑削除付き）
+   セット行（重量は数値入力・🗑削除付き）
 ------------------------------------------------------ */
 function createSetRow(container, data) {
   const row = document.createElement("div");
@@ -383,15 +378,19 @@ function createSetRow(container, data) {
   const fields = document.createElement("div");
   fields.className = "set-fields";
 
-  const weightSel = document.createElement("select");
-  weightSel.className = "weight-select";
-  fillWeightSelect(weightSel, data.weight);
+  // 重量：数値入力（手入力）
+  const weightInput = document.createElement("input");
+  weightInput.type = "number";
+  weightInput.inputMode = "decimal";
+  weightInput.className = "weight-input";
+  weightInput.placeholder = "重量(kg)";
+  weightInput.value = data.weight || "";
 
   const repsSel = document.createElement("select");
   repsSel.className = "reps-select";
   fillRepsSelect(repsSel, data.reps);
 
-  fields.appendChild(weightSel);
+  fields.appendChild(weightInput);
   fields.appendChild(repsSel);
   row.appendChild(fields);
 
@@ -402,7 +401,6 @@ function createSetRow(container, data) {
     row.remove();
     renumberSets(container);
 
-    // 0 件なら 1 行作る
     if (container.children.length === 0) {
       container.appendChild(createSetRow(container, {weight:"", reps:""}));
       renumberSets(container);
@@ -451,7 +449,6 @@ function createExerciseBlock(data) {
   header.appendChild(del);
   block.appendChild(header);
 
-
   const wrap = document.createElement("div");
   wrap.className = "exercise-select-wrapper";
   const exSel = createExerciseSelect(data.exercise);
@@ -468,7 +465,6 @@ function createExerciseBlock(data) {
     sets.appendChild(createSetRow(sets, {weight:"", reps:""}));
   }
   renumberSets(sets);
-
 
   const addSetBtn = document.createElement("button");
   addSetBtn.className = "add-set-btn";
@@ -497,7 +493,7 @@ function saveCurrentDay() {
 
     const setRows = b.querySelectorAll(".set-row");
     const sets = [...setRows].map(row => ({
-      weight: row.querySelector(".weight-select").value,
+      weight: row.querySelector(".weight-input").value,
       reps: row.querySelector(".reps-select").value
     })).filter(s => s.weight || s.reps);
 
@@ -563,12 +559,18 @@ addExerciseBtn.addEventListener("click", () => {
   saveCurrentDay();
 });
 
+// select（種目・レップ数）が変わったら即保存
 sheet.addEventListener("change", e => {
   if (e.target.matches("select")) saveCurrentDay();
 });
 
+// 重量入力＆メモはデバウンス保存
+sheet.addEventListener("input", e => {
+  if (e.target.matches(".weight-input")) {
+    saveCurrentDayDebounced();
+  }
+});
 note.addEventListener("input", () => saveCurrentDayDebounced());
-
 
 /* ------------------------------------------------------
    カレンダー描画
