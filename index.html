@@ -5,7 +5,6 @@
   <title>筋トレカレンダー</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    /* 全体レイアウト */
     body {
       margin: 0;
       font-family: system-ui, sans-serif;
@@ -42,7 +41,6 @@
       cursor: pointer;
     }
 
-    /* カレンダー */
     table {
       width: 100%;
       border-collapse: collapse;
@@ -53,14 +51,8 @@
       padding: 4px 0;
       font-size: 13px;
     }
-
     th:nth-child(1) { color: red; }
     th:nth-child(7) { color: blue; }
-    th:nth-child(2),
-    th:nth-child(3),
-    th:nth-child(4),
-    th:nth-child(5),
-    th:nth-child(6) { color: #666; }
 
     td {
       height: 64px;
@@ -71,11 +63,9 @@
       vertical-align: top;
       box-sizing: border-box;
     }
-
     td:hover {
       background: #f0f8ff;
     }
-
     .selected-day {
       background: #fff9c4 !important;
     }
@@ -89,7 +79,6 @@
       font-weight: bold;
       font-size: 12px;
     }
-
     .day-number.today {
       background-color: rgba(25, 118, 210, 0.16);
       border-radius: 50%;
@@ -117,7 +106,6 @@
       max-height: 75vh;
       overflow-y: auto;
     }
-
     .sheet.open {
       bottom: 0;
     }
@@ -159,10 +147,6 @@
       background: transparent;
       color: #d32f2f;
       cursor: pointer;
-    }
-
-    .exercise-select-wrapper {
-      margin-bottom: 6px;
     }
 
     .exercise-select-wrapper select {
@@ -208,21 +192,18 @@
       border-radius: 6px;
       border: 1px solid #ccc;
       flex: 1;
-      box-sizing: border-box;
     }
 
-    /* ゴミ箱ボタン */
     .delete-set-btn {
       position: absolute;
       top: 6px;
       right: 6px;
-      background: transparent;
+      background: none;
       border: none;
-      cursor: pointer;
       font-size: 16px;
       color: #d32f2f;
+      cursor: pointer;
       padding: 0;
-      line-height: 1;
     }
 
     .add-set-btn {
@@ -253,7 +234,6 @@
     .note-row {
       margin-top: 8px;
     }
-
     .note-row textarea {
       width: 100%;
       padding: 6px;
@@ -261,7 +241,6 @@
       border-radius: 6px;
       font-size: 13px;
       resize: vertical;
-      box-sizing: border-box;
     }
   </style>
 </head>
@@ -270,9 +249,9 @@
 
 <div class="container">
   <div class="calendar-header">
-    <button class="nav-btn" id="prev">＜</button>
+    <button id="prev" class="nav-btn">＜</button>
     <div class="month-label" id="month-label"></div>
-    <button class="nav-btn" id="next">＞</button>
+    <button id="next" class="nav-btn">＞</button>
   </div>
 
   <table>
@@ -287,465 +266,397 @@
 </div>
 
 <div id="sheet" class="sheet">
-  <div class="sheet-title" id="sheet-title"></div>
+  <div id="sheet-title" class="sheet-title"></div>
+
   <div id="exercise-list" class="exercise-list"></div>
 
   <button id="add-exercise" class="add-exercise-btn">＋ 種目を追加</button>
 
   <div class="note-row">
-    <textarea id="note" rows="2" placeholder="その他メモ（任意）"></textarea>
+    <textarea id="note" placeholder="その他メモ（任意）"></textarea>
   </div>
 </div>
 
 <script>
-  let current = new Date();
-  const events = JSON.parse(localStorage.getItem("workout") || "{}");
+/* ------------------------------------------------------
+   基本データ
+------------------------------------------------------ */
+let current = new Date();
+const events = JSON.parse(localStorage.getItem("workout") || "{}");
 
-  const monthLabel = document.getElementById("month-label");
-  const body = document.getElementById("calendar-body");
-  const sheet = document.getElementById("sheet");
-  const note = document.getElementById("note");
-  const sheetTitle = document.getElementById("sheet-title");
-  const exerciseList = document.getElementById("exercise-list");
-  const addExerciseBtn = document.getElementById("add-exercise");
-  let selectedDateKey = "";
+const monthLabel = document.getElementById("month-label");
+const body = document.getElementById("calendar-body");
+const sheet = document.getElementById("sheet");
+const note = document.getElementById("note");
+const sheetTitle = document.getElementById("sheet-title");
+const exerciseList = document.getElementById("exercise-list");
+const addExerciseBtn = document.getElementById("add-exercise");
+let selectedDateKey = "";
 
-  let noteDebounceTimer = null;
+let noteDebounceTimer = null;
 
-  const repsMax = 20;
+const repsMax = 20;
 
-  /* --- 種目カテゴリ --- */
-  const exerciseCategories = [
-    {
-      label: "胸",
-      items: [
-        "ベンチプレス",
-        "ダンベルプレス",
-        "インクラインスミスプレス",
-        "ペックフライ"
-      ]
-    },
-    {
-      label: "背中",
-      items: [
-        "懸垂",
-        "ラットプルダウン",
-        "シーテッドロー",
-        "デッドリフト",
-        "フェイスプル"
-      ]
-    },
-    {
-      label: "足",
-      items: [
-        "スクワット",
-        "ルーマニアンデッドリフト",
-        "ブルガリアンスクワット",
-        "ヒップアダクション"
-      ]
-    },
-    {
-      label: "肩",
-      items: [
-        "ショルダープレス",
-        "リアデルト",
-        "サイドレイズ"
-      ]
-    },
-    {
-      label: "腕",
-      items: [
-        "インクラインダンベルカール",
-        "ケーブルプレスダウン",
-        "オーバーヘッドエクステンション"
-      ]
-    }
-  ];
+const exerciseCategories = [
+  { label: "胸", items: ["ベンチプレス","ダンベルプレス","インクラインスミスプレス","ペックフライ"] },
+  { label: "背中", items: ["懸垂","ラットプルダウン","シーテッドロー","デッドリフト","フェイスプル"] },
+  { label: "足", items: ["スクワット","ルーマニアンデッドリフト","ブルガリアンスクワット","ヒップアダクション"] },
+  { label: "肩", items: ["ショルダープレス","リアデルト","サイドレイズ"] },
+  { label: "腕", items: ["インクラインダンベルカール","ケーブルプレスダウン","オーバーヘッドエクステンション"] }
+];
 
-  function dateKey(y, m, d) {
-    return `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+
+function dateKey(y, m, d) {
+  return `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+}
+
+function normalizeEvent(raw) {
+  if (!raw) return { exercises: [], note: "" };
+  if (typeof raw === "string") return { exercises: [], note: raw };
+
+  const exs = (raw.exercises || []).map(e => ({
+    exercise: e.exercise || "",
+    sets: (e.sets || []).map(s => ({
+      weight: s.weight || "",
+      reps: s.reps || ""
+    }))
+  }));
+
+  return { exercises: exs, note: raw.note || "" };
+}
+
+/* ------------------------------------------------------
+   セレクト生成
+------------------------------------------------------ */
+function fillRepsSelect(sel, selected) {
+  sel.innerHTML = "";
+  sel.innerHTML += `<option value="">レップ数</option>`;
+  for (let i = 1; i <= repsMax; i++) {
+    sel.innerHTML += `<option value="${i}" ${selected==i?"selected":""}>${i}回</option>`;
   }
+}
 
-  /* --- データ互換処理 --- */
-  function normalizeEvent(raw) {
-    if (!raw) return { exercises: [], note: "" };
-
-    if (typeof raw === "string") {
-      return { exercises: [], note: raw };
-    }
-
-    if (Array.isArray(raw.exercises)) {
-      const exs = raw.exercises.map(e => ({
-        exercise: e.exercise || "",
-        sets: Array.isArray(e.sets)
-          ? e.sets.map(s => ({
-              weight: s.weight || "",
-              reps: s.reps || ""
-            }))
-          : []
-      }));
-      return { exercises: exs, note: raw.note || "" };
-    }
-
-    const exercise = raw.exercise || "";
-    const sets = Array.isArray(raw.sets)
-      ? raw.sets.map(s => ({
-          weight: s.weight || "",
-          reps: s.reps || ""
-        }))
-      : [];
-    const noteText = raw.note || "";
-    const exercises = (exercise || sets.length > 0)
-      ? [{ exercise, sets }]
-      : [];
-
-    return { exercises, note: noteText };
+function fillWeightSelect(sel, selected) {
+  sel.innerHTML = "";
+  sel.innerHTML += `<option value="">重量(kg)</option>`;
+  for (let i = 0; i <= 80; i++) {
+    const w = i * 2.5;
+    const label = Number.isInteger(w) ? w.toFixed(0) : w.toFixed(1);
+    sel.innerHTML += `<option value="${label}" ${selected==label?"selected":""}>${label}</option>`;
   }
+}
 
-  /* --- レップ数セレクト生成 --- */
-  function fillRepsSelect(selectEl, selectedValue) {
-    selectEl.innerHTML = "";
-    const placeholder = document.createElement("option");
-    placeholder.value = "";
-    placeholder.textContent = "レップ数";
-    selectEl.appendChild(placeholder);
+function createExerciseSelect(selected) {
+  const sel = document.createElement("select");
+  sel.className = "exercise-select";
 
-    for (let i = 1; i <= repsMax; i++) {
+  sel.innerHTML = `<option value="">種目を選択</option>`;
+
+  exerciseCategories.forEach(cat => {
+    const grp = document.createElement("optgroup");
+    grp.label = cat.label;
+    cat.items.forEach(item => {
       const opt = document.createElement("option");
-      opt.value = String(i);
-      opt.textContent = `${i}回`;
-      if (selectedValue && String(selectedValue) === String(i)) opt.selected = true;
-      selectEl.appendChild(opt);
-    }
-  }
-
-  /* --- 重量セレクト生成（2.5kg刻み） --- */
-  function fillWeightSelect(selectEl, selectedValue) {
-    selectEl.innerHTML = "";
-    const placeholder = document.createElement("option");
-    placeholder.value = "";
-    placeholder.textContent = "重量(kg)";
-    selectEl.appendChild(placeholder);
-
-    for (let i = 0; i <= 80; i++) { // 0〜200kg
-      const w = i * 2.5;
-      const label = Number.isInteger(w) ? w.toFixed(0) : w.toFixed(1);
-      const opt = document.createElement("option");
-      opt.value = label;
-      opt.textContent = label;
-      if (selectedValue && String(selectedValue) === String(label)) opt.selected = true;
-      selectEl.appendChild(opt);
-    }
-  }
-
-  /* --- 種目セレクト（カテゴリ付き） --- */
-  function createExerciseSelect(selected) {
-    const sel = document.createElement("select");
-    sel.className = "exercise-select";
-
-    const placeholder = document.createElement("option");
-    placeholder.value = "";
-    placeholder.textContent = "種目を選択";
-    sel.appendChild(placeholder);
-
-    exerciseCategories.forEach(cat => {
-      const optgroup = document.createElement("optgroup");
-      optgroup.label = cat.label;
-
-      cat.items.forEach(name => {
-        const opt = document.createElement("option");
-        opt.value = name;
-        opt.textContent = name;
-        if (selected === name) opt.selected = true;
-        optgroup.appendChild(opt);
-      });
-
-      sel.appendChild(optgroup);
+      opt.value = item;
+      opt.textContent = item;
+      if (item === selected) opt.selected = true;
+      grp.appendChild(opt);
     });
+    sel.appendChild(grp);
+  });
 
-    return sel;
-  }
+  return sel;
+}
 
-  /* --- セット行（🗑付き） --- */
-  function createSetRow(setsContainer, setInfo) {
-    const setRow = document.createElement("div");
-    setRow.className = "set-row";
+/* ------------------------------------------------------
+   セット行（🗑削除付き）
+------------------------------------------------------ */
+function createSetRow(container, data) {
+  const row = document.createElement("div");
+  row.className = "set-row";
 
-    const label = document.createElement("div");
-    label.className = "set-label";
-    label.textContent = "セット";
-    setRow.appendChild(label);
+  const label = document.createElement("div");
+  label.className = "set-label";
+  label.textContent = "セット";
+  row.appendChild(label);
 
-    const fields = document.createElement("div");
-    fields.className = "set-fields";
+  const fields = document.createElement("div");
+  fields.className = "set-fields";
 
-    const weightSelect = document.createElement("select");
-    weightSelect.className = "weight-select";
-    fillWeightSelect(weightSelect, setInfo.weight);
+  const weightSel = document.createElement("select");
+  weightSel.className = "weight-select";
+  fillWeightSelect(weightSel, data.weight);
 
-    const repsSelect = document.createElement("select");
-    repsSelect.className = "reps-select";
-    fillRepsSelect(repsSelect, setInfo.reps);
+  const repsSel = document.createElement("select");
+  repsSel.className = "reps-select";
+  fillRepsSelect(repsSel, data.reps);
 
-    fields.appendChild(weightSelect);
-    fields.appendChild(repsSelect);
-    setRow.appendChild(fields);
+  fields.appendChild(weightSel);
+  fields.appendChild(repsSel);
+  row.appendChild(fields);
 
-    /* 🗑 削除ボタン */
-    const delBtn = document.createElement("button");
-    delBtn.className = "delete-set-btn";
-    delBtn.innerHTML = "🗑";
-    delBtn.addEventListener("click", () => {
-      setRow.remove();
-      renumberSets(setsContainer);
-      saveCurrentDay();
-    });
-    setRow.appendChild(delBtn);
+  const del = document.createElement("button");
+  del.className = "delete-set-btn";
+  del.innerHTML = "🗑";
+  del.addEventListener("click", () => {
+    row.remove();
+    renumberSets(container);
 
-    return setRow;
-  }
-
-  /* --- セット番号の再振り直し --- */
-  function renumberSets(container) {
-    const rows = container.querySelectorAll(".set-row");
-    rows.forEach((row, idx) => {
-      row.querySelector(".set-label").textContent = `セット ${idx + 1}`;
-    });
-
-    if (rows.length === 0) {
-      const newRow = createSetRow(container, { weight: "", reps: "" });
-      container.appendChild(newRow);
-    }
-  }
-
-  /* --- 種目ブロック作成 --- */
-  function createExerciseBlock(data) {
-    const block = document.createElement("div");
-    block.className = "exercise-block";
-
-    const header = document.createElement("div");
-    header.className = "exercise-header";
-
-    const title = document.createElement("span");
-    title.className = "exercise-title";
-    title.textContent = "種目";
-
-    const removeBtn = document.createElement("button");
-    removeBtn.className = "remove-exercise";
-    removeBtn.textContent = "削除";
-    removeBtn.addEventListener("click", () => {
-      block.remove();
-      saveCurrentDay();
-    });
-
-    header.appendChild(title);
-    header.appendChild(removeBtn);
-    block.appendChild(header);
-
-    const selectWrap = document.createElement("div");
-    selectWrap.className = "exercise-select-wrapper";
-    const exerciseSelect = createExerciseSelect(data?.exercise);
-    selectWrap.appendChild(exerciseSelect);
-    block.appendChild(selectWrap);
-
-    const setsContainer = document.createElement("div");
-    setsContainer.className = "sets-container";
-    block.appendChild(setsContainer);
-
-    if (data?.sets?.length) {
-      data.sets.forEach(s => {
-        const row = createSetRow(setsContainer, s);
-        setsContainer.appendChild(row);
-      });
-    } else {
-      setsContainer.appendChild(createSetRow(setsContainer, { weight: "", reps: "" }));
+    // 0 件なら 1 行作る
+    if (container.children.length === 0) {
+      container.appendChild(createSetRow(container, {weight:"", reps:""}));
+      renumberSets(container);
     }
 
-    const addSetBtn = document.createElement("button");
-    addSetBtn.className = "add-set-btn";
-    addSetBtn.textContent = "＋ セット追加";
-    addSetBtn.addEventListener("click", () => {
-      setsContainer.appendChild(createSetRow(setsContainer, { weight: "", reps: "" }));
-      renumberSets(setsContainer);
-      saveCurrentDay();
-    });
-    block.appendChild(addSetBtn);
+    saveCurrentDay();
+  });
+  row.appendChild(del);
 
-    return block;
-  }
+  return row;
+}
 
-  /* --- オートセーブ（画面内容を読み取る） --- */
-  function saveCurrentDay() {
-    if (!selectedDateKey) return;
+/* ------------------------------------------------------
+   セット番号振り直し
+------------------------------------------------------ */
+function renumberSets(container) {
+  const rows = container.querySelectorAll(".set-row");
+  rows.forEach((row, i) => {
+    row.querySelector(".set-label").textContent = `セット ${i+1}`;
+  });
+}
 
-    const blocks = Array.from(document.querySelectorAll(".exercise-block"));
-    const exercises = [];
+/* ------------------------------------------------------
+   種目ブロック
+------------------------------------------------------ */
+function createExerciseBlock(data) {
+  const block = document.createElement("div");
+  block.className = "exercise-block";
 
-    blocks.forEach(block => {
-      const exerciseSelect = block.querySelector(".exercise-select");
-      const name = exerciseSelect.value;
+  const header = document.createElement("div");
+  header.className = "exercise-header";
 
-      const setRows = block.querySelectorAll(".set-row");
-      const sets = [];
+  const title = document.createElement("span");
+  title.className = "exercise-title";
+  title.textContent = "種目";
 
-      setRows.forEach(row => {
-        const w = row.querySelector(".weight-select").value;
-        const r = row.querySelector(".reps-select").value;
-        if (w || r) sets.push({ weight: w, reps: r });
-      });
-
-      if (name || sets.length > 0) exercises.push({ exercise: name, sets });
-    });
-
-    const noteText = note.value.trim();
-
-    if (exercises.length > 0 || noteText) {
-      events[selectedDateKey] = { exercises, note: noteText };
-    } else {
-      delete events[selectedDateKey];
-    }
-
-    localStorage.setItem("workout", JSON.stringify(events));
-    render();
-  }
-
-  function saveCurrentDayDebounced() {
-    clearTimeout(noteDebounceTimer);
-    noteDebounceTimer = setTimeout(() => saveCurrentDay(), 500);
-  }
-
-  /* --- 日付のクリック処理 --- */
-  function handleDateClick(key) {
-    if (sheet.classList.contains("open")) {
-      if (key === selectedDateKey) return;
-      sheet.classList.remove("open");
-      setTimeout(() => openSheet(key), 250);
-    } else {
-      openSheet(key);
-    }
-  }
-
-  function openSheet(key) {
-    selectedDateKey = key;
-    render();
-
-    const data = normalizeEvent(events[key]);
-    sheetTitle.textContent = `${key} の筋トレ`;
-
-    exerciseList.innerHTML = "";
-    if (data.exercises.length > 0) {
-      data.exercises.forEach(ex => exerciseList.appendChild(createExerciseBlock(ex)));
-    } else {
-      exerciseList.appendChild(createExerciseBlock({}));
-    }
-
-    note.value = data.note || "";
-
-    sheet.classList.add("open");
-  }
-
-  /* --- イベント設定 --- */
-  addExerciseBtn.addEventListener("click", () => {
-    exerciseList.appendChild(createExerciseBlock({}));
+  const del = document.createElement("button");
+  del.className = "remove-exercise";
+  del.textContent = "削除";
+  del.addEventListener("click", () => {
+    block.remove();
     saveCurrentDay();
   });
 
-  sheet.addEventListener("change", e => {
-    if (e.target.matches("select")) saveCurrentDay();
+  header.appendChild(title);
+  header.appendChild(del);
+  block.appendChild(header);
+
+
+  const wrap = document.createElement("div");
+  wrap.className = "exercise-select-wrapper";
+  const exSel = createExerciseSelect(data.exercise);
+  wrap.appendChild(exSel);
+  block.appendChild(wrap);
+
+  const sets = document.createElement("div");
+  sets.className = "sets-container";
+  block.appendChild(sets);
+
+  if (data.sets?.length) {
+    data.sets.forEach(s => sets.appendChild(createSetRow(sets, s)));
+  } else {
+    sets.appendChild(createSetRow(sets, {weight:"", reps:""}));
+  }
+  renumberSets(sets);
+
+
+  const addSetBtn = document.createElement("button");
+  addSetBtn.className = "add-set-btn";
+  addSetBtn.textContent = "＋ セット追加";
+  addSetBtn.addEventListener("click", () => {
+    sets.appendChild(createSetRow(sets, {weight:"", reps:""}));
+    renumberSets(sets);
+    saveCurrentDay();
+  });
+  block.appendChild(addSetBtn);
+
+  return block;
+}
+
+/* ------------------------------------------------------
+   オートセーブ
+------------------------------------------------------ */
+function saveCurrentDay() {
+  if (!selectedDateKey) return;
+
+  const blocks = [...document.querySelectorAll(".exercise-block")];
+  const exercises = [];
+
+  blocks.forEach(b => {
+    const ex = b.querySelector(".exercise-select").value;
+
+    const setRows = b.querySelectorAll(".set-row");
+    const sets = [...setRows].map(row => ({
+      weight: row.querySelector(".weight-select").value,
+      reps: row.querySelector(".reps-select").value
+    })).filter(s => s.weight || s.reps);
+
+    if (ex || sets.length > 0) exercises.push({ exercise: ex, sets });
   });
 
-  note.addEventListener("input", () => saveCurrentDayDebounced());
+  const noteText = note.value.trim();
 
-  /* --- カレンダー描画 --- */
-  function render() {
-    const y = current.getFullYear();
-    const m = current.getMonth();
-
-    monthLabel.textContent = `${y}年 ${m+1}月`;
-    body.innerHTML = "";
-
-    const first = new Date(y, m, 1);
-    const last = new Date(y, m + 1, 0);
-
-    let row = document.createElement("tr");
-    let count = 0;
-
-    for (let i = 0; i < first.getDay(); i++) {
-      row.appendChild(document.createElement("td"));
-      count++;
-    }
-
-    const today = new Date();
-    const isThisMonth =
-      today.getFullYear() === y && today.getMonth() === m;
-
-    for (let d = 1; d <= last.getDate(); d++) {
-      if (count === 7) {
-        body.appendChild(row);
-        row = document.createElement("tr");
-        count = 0;
-      }
-
-      const cell = document.createElement("td");
-
-      const dayNumber = document.createElement("div");
-      dayNumber.textContent = d;
-      dayNumber.className = "day-number";
-
-      const weekday = (first.getDay() + (d - 1)) % 7;
-      if (weekday === 0) dayNumber.style.color = "red";
-      if (weekday === 6) dayNumber.style.color = "blue";
-
-      if (isThisMonth && today.getDate() === d) {
-        dayNumber.classList.add("today");
-      }
-
-      cell.appendChild(dayNumber);
-
-      const key = dateKey(y, m, d);
-
-      if (key === selectedDateKey) cell.classList.add("selected-day");
-
-      if (events[key]) {
-        const preview = document.createElement("div");
-        preview.className = "record-preview";
-        preview.textContent = getPreviewText(events[key]);
-        cell.appendChild(preview);
-      }
-
-      cell.addEventListener("click", () => handleDateClick(key));
-
-      row.appendChild(cell);
-      count++;
-    }
-
-    body.appendChild(row);
+  if (exercises.length > 0 || noteText) {
+    events[selectedDateKey] = { exercises, note: noteText };
+  } else {
+    delete events[selectedDateKey];
   }
 
-  /* --- カレンダープレビュー --- */
-  function getPreviewText(raw) {
-    const data = normalizeEvent(raw);
-    if (data.exercises.length > 0) {
-      const e = data.exercises[0];
-      const s = e.sets[0];
-      if (e.exercise) return `${e.exercise} ${s?.weight || ""}kg ${s?.reps || ""}回`;
-    }
-    if (data.note) return data.note.slice(0, 20);
-    return "";
+  localStorage.setItem("workout", JSON.stringify(events));
+  render();
+}
+
+function saveCurrentDayDebounced() {
+  clearTimeout(noteDebounceTimer);
+  noteDebounceTimer = setTimeout(saveCurrentDay, 500);
+}
+
+/* ------------------------------------------------------
+   日付クリック → シート開閉
+------------------------------------------------------ */
+function handleDateClick(key) {
+  if (sheet.classList.contains("open")) {
+    if (key === selectedDateKey) return;
+    sheet.classList.remove("open");
+    setTimeout(() => openSheet(key), 250);
+  } else {
+    openSheet(key);
   }
+}
 
-  /* --- 月移動 --- */
-  document.getElementById("prev").onclick = () => {
-    current.setMonth(current.getMonth() - 1);
-    render();
-  };
-
-  document.getElementById("next").onclick = () => {
-    current.setMonth(current.getMonth() + 1);
-    render();
-  };
+function openSheet(key) {
+  selectedDateKey = key;
 
   render();
+
+  const data = normalizeEvent(events[key]);
+
+  sheetTitle.textContent = `${key} の筋トレ`;
+  exerciseList.innerHTML = "";
+
+  if (data.exercises.length) {
+    data.exercises.forEach(ex => exerciseList.appendChild(createExerciseBlock(ex)));
+  } else {
+    exerciseList.appendChild(createExerciseBlock({}));
+  }
+
+  note.value = data.note || "";
+
+  sheet.classList.add("open");
+}
+
+/* ------------------------------------------------------
+   入力監視（オートセーブ）
+------------------------------------------------------ */
+addExerciseBtn.addEventListener("click", () => {
+  exerciseList.appendChild(createExerciseBlock({}));
+  saveCurrentDay();
+});
+
+sheet.addEventListener("change", e => {
+  if (e.target.matches("select")) saveCurrentDay();
+});
+
+note.addEventListener("input", () => saveCurrentDayDebounced());
+
+
+/* ------------------------------------------------------
+   カレンダー描画
+------------------------------------------------------ */
+function render() {
+  const y = current.getFullYear();
+  const m = current.getMonth();
+
+  monthLabel.textContent = `${y}年 ${m+1}月`;
+  body.innerHTML = "";
+
+  const first = new Date(y, m, 1);
+  const last = new Date(y, m+1, 0);
+
+  let row = document.createElement("tr");
+  let count = 0;
+
+  for (let i = 0; i < first.getDay(); i++) {
+    row.appendChild(document.createElement("td"));
+    count++;
+  }
+
+  const today = new Date();
+  const isThisMonth = today.getFullYear()===y && today.getMonth()===m;
+
+  for (let d = 1; d <= last.getDate(); d++) {
+    if (count === 7) {
+      body.appendChild(row);
+      row = document.createElement("tr");
+      count = 0;
+    }
+
+    const cell = document.createElement("td");
+
+    const num = document.createElement("div");
+    num.className = "day-number";
+    num.textContent = d;
+
+    const weekday = (first.getDay() + (d-1)) % 7;
+    if (weekday===0) num.style.color = "red";
+    if (weekday===6) num.style.color = "blue";
+
+    if (isThisMonth && today.getDate()===d) {
+      num.classList.add("today");
+    }
+    cell.appendChild(num);
+
+    const key = dateKey(y,m,d);
+    if (key===selectedDateKey) cell.classList.add("selected-day");
+
+    if (events[key]) {
+      const preview = document.createElement("div");
+      preview.className = "record-preview";
+      preview.textContent = getPreviewText(events[key]);
+      cell.appendChild(preview);
+    }
+
+    cell.addEventListener("click", () => handleDateClick(key));
+
+    row.appendChild(cell);
+    count++;
+  }
+
+  body.appendChild(row);
+}
+
+function getPreviewText(raw) {
+  const data = normalizeEvent(raw);
+  if (data.exercises.length) {
+    const e = data.exercises[0];
+    const s = e.sets[0] || {};
+    return `${e.exercise || ""} ${s.weight || ""}kg ${s.reps || ""}回`;
+  }
+  if (data.note) return data.note.slice(0,20);
+  return "";
+}
+
+/* 月移動 */
+document.getElementById("prev").onclick = () => {
+  current.setMonth(current.getMonth()-1);
+  render();
+};
+document.getElementById("next").onclick = () => {
+  current.setMonth(current.getMonth()+1);
+  render();
+};
+
+render();
 </script>
 
 </body>
