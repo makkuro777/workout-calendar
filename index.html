@@ -128,6 +128,7 @@
       padding: 4px 8px;
       border-radius: 6px;
       font-size: 13px;
+      cursor: pointer;
     }
 
     .month-label {
@@ -146,6 +147,7 @@
       width: 100%;
       border-collapse: collapse;
       table-layout: fixed;
+      transition: transform 0.2s ease;
     }
 
     th {
@@ -217,14 +219,12 @@
       transition: height 0.25s;
     }
 
-    /* 閉じているとき：高さ 24px だけ（バーだけ見える） */
     .sheet.closed {
       height: 24px;
       overflow: hidden;
       padding: 6px 12px 6px;
     }
 
-    /* 開いているとき：中身全部表示（自動高さ） */
     .sheet.open {
       height: auto;
       padding: 8px 12px 12px;
@@ -385,7 +385,7 @@
         <button id="next" class="nav-btn">＞</button>
       </div>
 
-      <div class="calendar-wrapper">
+      <div class="calendar-wrapper" id="calendar-wrapper">
         <table id="calendar-table">
           <thead>
             <tr>
@@ -419,8 +419,8 @@
     </div>
   </div>
 
-  <!-- メモシート（最初はバーだけ見える状態 = closed） -->
-  <div id="sheet" class="sheet closed">
+  <!-- メモシート（最初はオープン状態） -->
+  <div id="sheet" class="sheet open">
     <div id="sheet-handle" class="sheet-handle">
       <div class="sheet-handle-bar"></div>
     </div>
@@ -467,6 +467,8 @@ var sideMenu = document.getElementById("side-menu");
 var menuMonth = document.getElementById("menu-month");
 var menuWeek = document.getElementById("menu-week");
 var sheetHandle = document.getElementById("sheet-handle");
+var monthView = document.getElementById("month-view");
+var calendarTable = document.getElementById("calendar-table");
 
 /* 種目カテゴリ */
 var exerciseCategories = [
@@ -934,6 +936,76 @@ sheetHandle.addEventListener("touchend", function(e){
   } else if (dy < -threshold && sheet.classList.contains("closed")){
     sheet.classList.remove("closed");
     sheet.classList.add("open");
+  }
+});
+
+/* ====== 月カレンダー 横スワイプ ====== */
+var swipeStartX = 0;
+var swipeStartY = 0;
+var isSwiping = false;
+
+monthView.addEventListener("touchstart", function(e){
+  if (e.touches.length !== 1) return;
+  var t = e.touches[0];
+  swipeStartX = t.clientX;
+  swipeStartY = t.clientY;
+  isSwiping = true;
+  calendarTable.style.transition = "none";
+});
+
+monthView.addEventListener("touchmove", function(e){
+  if (!isSwiping) return;
+  var t = e.touches[0];
+  var dx = t.clientX - swipeStartX;
+  var dy = t.clientY - swipeStartY;
+
+  if (Math.abs(dy) > Math.abs(dx)) return; // 縦が大きいときは無視
+
+  calendarTable.style.transform = "translateX(" + dx + "px)";
+});
+
+monthView.addEventListener("touchend", function(e){
+  if (!isSwiping) return;
+  isSwiping = false;
+
+  var t = e.changedTouches[0];
+  var dx = t.clientX - swipeStartX;
+  var dy = t.clientY - swipeStartY;
+
+  calendarTable.style.transition = "transform 0.2s ease";
+
+  var threshold = 60;
+
+  if (Math.abs(dx) > threshold && Math.abs(dx) > Math.abs(dy)) {
+    if (dx < 0) {
+      // 左スワイプ → 次の月
+      calendarTable.style.transform = "translateX(-100%)";
+      setTimeout(function(){
+        monthDate.setMonth(monthDate.getMonth() + 1);
+        renderMonth();
+        calendarTable.style.transition = "none";
+        calendarTable.style.transform = "translateX(100%)";
+        setTimeout(function(){
+          calendarTable.style.transition = "transform 0.2s ease";
+          calendarTable.style.transform = "translateX(0)";
+        }, 0);
+      }, 200);
+    } else {
+      // 右スワイプ → 前の月
+      calendarTable.style.transform = "translateX(100%)";
+      setTimeout(function(){
+        monthDate.setMonth(monthDate.getMonth() - 1);
+        renderMonth();
+        calendarTable.style.transition = "none";
+        calendarTable.style.transform = "translateX(-100%)";
+        setTimeout(function(){
+          calendarTable.style.transition = "transform 0.2s ease";
+          calendarTable.style.transform = "translateX(0)";
+        }, 0);
+      }, 200);
+    }
+  } else {
+    calendarTable.style.transform = "translateX(0)";
   }
 });
 
