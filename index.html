@@ -5,20 +5,48 @@
   <title>筋トレカレンダー</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body {
+    html, body {
       margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden; /* 画面全体は縦スクロールさせない */
       font-family: system-ui, sans-serif;
       background: #f7f7f7;
+    }
+
+    body {
       display: flex;
       justify-content: center;
     }
 
-    .container {
+    .app {
+      position: relative;
       width: 380px;
       max-width: 100%;
-      margin-top: 20px;
-      padding: 0 8px 80px;
+      height: 100%;
       box-sizing: border-box;
+      background: #f7f7f7;
+    }
+
+    .container {
+      height: 100%;
+      padding: 8px 8px 80px;
+      box-sizing: border-box;
+    }
+
+    /* ハンバーガーメニュー周り */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      margin-bottom: 4px;
+    }
+    .menu-btn {
+      border: none;
+      background: transparent;
+      font-size: 22px;
+      padding: 4px 8px 4px 0;
+      cursor: pointer;
     }
 
     .calendar-header {
@@ -26,7 +54,7 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 8px;
-      gap: 6px;
+      gap: 4px;
     }
 
     .month-label {
@@ -43,6 +71,7 @@
       border-radius: 6px;
       cursor: pointer;
       white-space: nowrap;
+      font-size: 13px;
     }
 
     .month-select {
@@ -121,22 +150,39 @@
       white-space: nowrap;
     }
 
+    /* 週表示用 */
+    .week-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+    .week-label {
+      flex: 1;
+      text-align: center;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    /* メモシート */
     .sheet {
       position: fixed;
-      bottom: -260px; /* 閉じているときはヘッダーだけ見えるくらいに下げる */
-      left: 0;
-      width: 100%;
+      left: 50%;
+      transform: translateX(-50%) translateY(calc(100% - 24px)); /* デフォはバーだけ見える */
+      width: 380px;
+      max-width: 100%;
       background: #fff;
       border-radius: 16px 16px 0 0;
-      padding: 16px;
+      padding: 8px 16px 16px;
       box-shadow: 0 -5px 20px rgba(0,0,0,0.15);
-      transition: bottom 0.3s ease;
       box-sizing: border-box;
       max-height: 75vh;
       overflow-y: auto;
+      transition: transform 0.3s ease;
     }
     .sheet.open {
-      bottom: 0;
+      transform: translateX(-50%) translateY(0);
     }
 
     .sheet-handle {
@@ -148,7 +194,7 @@
     }
     .sheet-handle-bar {
       width: 40px;
-      height: 4px;
+      height: 12px; /* 指定どおり12px */
       border-radius: 999px;
       background: #ccc;
     }
@@ -222,7 +268,7 @@
     .set-row {
       border: 1px solid #ddd;
       border-radius: 6px;
-      padding: 6px 32px 6px 6px; /* 右上🗑用 */
+      padding: 6px 32px 6px 6px;
       background: #fff;
       position: relative;
     }
@@ -298,44 +344,134 @@
       font-size: 13px;
       resize: vertical;
     }
+
+    /* サイドメニュー */
+    .side-menu-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.25);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    .side-menu-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .side-menu {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 70vw;
+      max-width: 280px;
+      background: #ffffff;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+      transform: translateX(-100%);
+      transition: transform 0.2s ease;
+      box-sizing: border-box;
+      padding: 16px 12px;
+    }
+    .side-menu.open {
+      transform: translateX(0);
+    }
+
+    .side-menu-title {
+      font-weight: bold;
+      margin-bottom: 12px;
+      font-size: 16px;
+    }
+
+    .side-menu-item {
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      margin-bottom: 4px;
+    }
+    .side-menu-item.active {
+      background: #e3f2fd;
+      color: #1976d2;
+      font-weight: 600;
+    }
+
   </style>
 </head>
 
 <body>
-
-<div class="container" id="calendar-container">
-  <div class="calendar-header">
-    <button id="prev" class="nav-btn">＜</button>
-    <div class="month-label" id="month-label"></div>
-    <select id="month-select" class="month-select"></select>
-    <button id="next" class="nav-btn">＞</button>
+<div class="app">
+  <!-- サイドメニュー -->
+  <div id="side-menu-overlay" class="side-menu-overlay"></div>
+  <div id="side-menu" class="side-menu">
+    <div class="side-menu-title">表示切替</div>
+    <div id="menu-month" class="side-menu-item active">月表示</div>
+    <div id="menu-week" class="side-menu-item">週表示</div>
   </div>
 
-  <div class="calendar-wrapper" id="calendar-wrapper">
-    <table id="calendar-table">
-      <thead>
-        <tr>
-          <th>日</th><th>月</th><th>火</th><th>水</th>
-          <th>木</th><th>金</th><th>土</th>
-        </tr>
-      </thead>
-      <tbody id="calendar-body"></tbody>
-    </table>
+  <div class="container">
+    <div class="top-bar">
+      <button id="menu-btn" class="menu-btn">☰</button>
+    </div>
+
+    <!-- 月表示 -->
+    <div id="month-view">
+      <div class="calendar-header">
+        <button id="prev" class="nav-btn">＜</button>
+        <div class="month-label" id="month-label"></div>
+        <select id="month-select" class="month-select"></select>
+        <button id="next" class="nav-btn">＞</button>
+      </div>
+
+      <div class="calendar-wrapper" id="calendar-wrapper">
+        <table id="calendar-table">
+          <thead>
+            <tr>
+              <th>日</th><th>月</th><th>火</th><th>水</th>
+              <th>木</th><th>金</th><th>土</th>
+            </tr>
+          </thead>
+          <tbody id="calendar-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 週表示 -->
+    <div id="week-view" style="display:none;">
+      <div class="calendar-header">
+        <button id="week-prev" class="nav-btn">＜</button>
+        <div class="week-label" id="week-label"></div>
+        <button id="week-next" class="nav-btn">＞</button>
+      </div>
+
+      <div class="calendar-wrapper" id="week-wrapper">
+        <table id="week-table">
+          <thead>
+            <tr>
+              <th>日</th><th>月</th><th>火</th><th>水</th>
+              <th>木</th><th>金</th><th>土</th>
+            </tr>
+          </thead>
+          <tbody id="week-body"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
-</div>
 
-<div id="sheet" class="sheet">
-  <div class="sheet-handle" id="sheet-handle">
-    <div class="sheet-handle-bar"></div>
-  </div>
-  <div id="sheet-title" class="sheet-title"></div>
+  <!-- メモシート -->
+  <div id="sheet" class="sheet">
+    <div class="sheet-handle" id="sheet-handle">
+      <div class="sheet-handle-bar"></div>
+    </div>
+    <div id="sheet-title" class="sheet-title"></div>
 
-  <div id="exercise-list" class="exercise-list"></div>
+    <div id="exercise-list" class="exercise-list"></div>
 
-  <button id="add-exercise" class="add-exercise-btn">＋ 種目を追加</button>
+    <button id="add-exercise" class="add-exercise-btn">＋ 種目を追加</button>
 
-  <div class="note-row">
-    <textarea id="note" placeholder="その他メモ（任意）"></textarea>
+    <div class="note-row">
+      <textarea id="note" placeholder="その他メモ（任意）"></textarea>
+    </div>
   </div>
 </div>
 
@@ -343,12 +479,16 @@
 /* ------------------------------------------------------
    基本データ
 ------------------------------------------------------ */
-let current = new Date();
+let monthDate = new Date();           // 月表示用
+let weekDate = new Date();            // 週表示用の基準日（属する週）
 const events = JSON.parse(localStorage.getItem("workout") || "{}");
 
 const monthLabel = document.getElementById("month-label");
 const monthSelect = document.getElementById("month-select");
-const body = document.getElementById("calendar-body");
+const calBody = document.getElementById("calendar-body");
+const weekBody = document.getElementById("week-body");
+const weekLabel = document.getElementById("week-label");
+
 const sheet = document.getElementById("sheet");
 const sheetHandle = document.getElementById("sheet-handle");
 const note = document.getElementById("note");
@@ -357,8 +497,15 @@ const exerciseList = document.getElementById("exercise-list");
 const addExerciseBtn = document.getElementById("add-exercise");
 const calendarWrapper = document.getElementById("calendar-wrapper");
 const calendarTable = document.getElementById("calendar-table");
-const calendarContainer = document.getElementById("calendar-container");
+const calendarContainer = document.querySelector(".container");
 
+const sideMenu = document.getElementById("side-menu");
+const sideMenuOverlay = document.getElementById("side-menu-overlay");
+const menuBtn = document.getElementById("menu-btn");
+const menuMonth = document.getElementById("menu-month");
+const menuWeek = document.getElementById("menu-week");
+
+let viewMode = "month"; // "month" or "week"
 let selectedDateKey = "";
 let noteDebounceTimer = null;
 
@@ -404,7 +551,7 @@ function getBodyPartColor(label) {
 }
 
 /* ------------------------------------------------------
-   年月プルダウン初期化
+   年月プルダウン初期化（広めに）
 ------------------------------------------------------ */
 (function initMonthSelect() {
   const baseYear = new Date().getFullYear();
@@ -424,8 +571,8 @@ function getBodyPartColor(label) {
     const [yStr, mStr] = monthSelect.value.split("-");
     const y = parseInt(yStr, 10);
     const m = parseInt(mStr, 10) - 1;
-    current = new Date(y, m, 1);
-    render();
+    monthDate = new Date(y, m, 1);
+    renderMonth();
   });
 })();
 
@@ -634,7 +781,7 @@ function saveCurrentDay() {
   }
 
   localStorage.setItem("workout", JSON.stringify(events));
-  render();
+  renderCurrentView();
 }
 
 function saveCurrentDayDebounced() {
@@ -643,12 +790,11 @@ function saveCurrentDayDebounced() {
 }
 
 /* ------------------------------------------------------
-   日付クリック → メモシート開閉
-   同じ日をタップ → シートを「引っ込める」（ヘッダーだけ）
+   日付クリック → メモ欄開閉
 ------------------------------------------------------ */
 function handleDateClick(key) {
   if (selectedDateKey === key && sheet.classList.contains("open")) {
-    // 同じ日付をもう一度 → 引っ込める（openを外すだけでヘッダー残る）
+    // 同じ日付をタップしたら、バーだけ残して閉じる
     sheet.classList.remove("open");
     return;
   }
@@ -672,11 +818,11 @@ function openSheet(key) {
   note.value = data.note || "";
 
   sheet.classList.add("open");
-  render();
+  renderCurrentView();
 }
 
 /* ------------------------------------------------------
-   入力監視（オートセーブ）
+   入力監視
 ------------------------------------------------------ */
 addExerciseBtn.addEventListener("click", () => {
   exerciseList.appendChild(createExerciseBlock({}));
@@ -702,9 +848,7 @@ sheet.addEventListener("input", e => {
 note.addEventListener("input", () => saveCurrentDayDebounced());
 
 /* ------------------------------------------------------
-   メモシートのヘッダー上下スワイプ
-   下スワイプ → 引っ込める（open外す）
-   上スワイプ → open付与
+   メモシートの上下スワイプ（ハンドル）
 ------------------------------------------------------ */
 let sheetStartY = 0;
 let sheetDragging = false;
@@ -717,7 +861,6 @@ sheetHandle.addEventListener("touchstart", (e) => {
 
 sheetHandle.addEventListener("touchmove", (e) => {
   if (!sheetDragging) return;
-  // 今回は判定だけで、リアルタイム追従はしない
 });
 
 sheetHandle.addEventListener("touchend", (e) => {
@@ -727,7 +870,7 @@ sheetHandle.addEventListener("touchend", (e) => {
   const dy = endY - sheetStartY;
   const threshold = 40;
   if (dy > threshold && sheet.classList.contains("open")) {
-    // 下スワイプ → 引っ込める
+    // 下スワイプ → 引っ込める（バーだけ残す）
     sheet.classList.remove("open");
   } else if (dy < -threshold && !sheet.classList.contains("open")) {
     // 上スワイプ → 全開
@@ -736,14 +879,14 @@ sheetHandle.addEventListener("touchend", (e) => {
 });
 
 /* ------------------------------------------------------
-   スワイプで月移動（カレンダー＋余白）
-   ※メモシートにはバインドしてない
+   カレンダー横スワイプ（縦は動かない）
 ------------------------------------------------------ */
 let swipeStartX = 0;
 let swipeStartY = 0;
 let isSwiping = false;
 
 calendarContainer.addEventListener("touchstart", (e) => {
+  if (viewMode !== "month") return; // 月表示のときだけ
   if (e.touches.length !== 1) return;
   const t = e.touches[0];
   swipeStartX = t.clientX;
@@ -753,18 +896,18 @@ calendarContainer.addEventListener("touchstart", (e) => {
 });
 
 calendarContainer.addEventListener("touchmove", (e) => {
-  if (!isSwiping) return;
+  if (!isSwiping || viewMode !== "month") return;
   const t = e.touches[0];
   const dx = t.clientX - swipeStartX;
   const dy = t.clientY - swipeStartY;
 
-  if (Math.abs(dy) > Math.abs(dx)) return;
+  if (Math.abs(dy) > Math.abs(dx)) return; // 縦の動きは無視
 
   calendarTable.style.transform = `translateX(${dx}px)`;
 });
 
 calendarContainer.addEventListener("touchend", (e) => {
-  if (!isSwiping) return;
+  if (!isSwiping || viewMode !== "month") return;
   isSwiping = false;
 
   const t = e.changedTouches[0];
@@ -777,10 +920,11 @@ calendarContainer.addEventListener("touchend", (e) => {
 
   if (Math.abs(dx) > threshold && Math.abs(dx) > Math.abs(dy)) {
     if (dx < 0) {
+      // 左スワイプ → 次の月
       calendarTable.style.transform = "translateX(-100%)";
       setTimeout(() => {
-        current.setMonth(current.getMonth() + 1);
-        render();
+        monthDate.setMonth(monthDate.getMonth() + 1);
+        renderMonth();
         calendarTable.style.transition = "none";
         calendarTable.style.transform = "translateX(100%)";
         requestAnimationFrame(() => {
@@ -789,10 +933,11 @@ calendarContainer.addEventListener("touchend", (e) => {
         });
       }, 200);
     } else {
+      // 右スワイプ → 前の月
       calendarTable.style.transform = "translateX(100%)";
       setTimeout(() => {
-        current.setMonth(current.getMonth() - 1);
-        render();
+        monthDate.setMonth(monthDate.getMonth() - 1);
+        renderMonth();
         calendarTable.style.transition = "none";
         calendarTable.style.transform = "translateX(-100%)";
         requestAnimationFrame(() => {
@@ -807,11 +952,46 @@ calendarContainer.addEventListener("touchend", (e) => {
 });
 
 /* ------------------------------------------------------
+   サイドメニュー開閉 & 表示切り替え
+------------------------------------------------------ */
+function openSideMenu() {
+  sideMenu.classList.add("open");
+  sideMenuOverlay.classList.add("open");
+}
+function closeSideMenu() {
+  sideMenu.classList.remove("open");
+  sideMenuOverlay.classList.remove("open");
+}
+
+menuBtn.addEventListener("click", openSideMenu);
+sideMenuOverlay.addEventListener("click", closeSideMenu);
+
+menuMonth.addEventListener("click", () => {
+  viewMode = "month";
+  document.getElementById("month-view").style.display = "block";
+  document.getElementById("week-view").style.display = "none";
+  menuMonth.classList.add("active");
+  menuWeek.classList.remove("active");
+  closeSideMenu();
+  renderMonth();
+});
+
+menuWeek.addEventListener("click", () => {
+  viewMode = "week";
+  document.getElementById("month-view").style.display = "none";
+  document.getElementById("week-view").style.display = "block";
+  menuWeek.classList.add("active");
+  menuMonth.classList.remove("active");
+  closeSideMenu();
+  renderWeek();
+});
+
+/* ------------------------------------------------------
    カレンダー描画（種目名だけ色付きバッジ表示）
 ------------------------------------------------------ */
 function updateMonthUI() {
-  const y = current.getFullYear();
-  const m = current.getMonth();
+  const y = monthDate.getFullYear();
+  const m = monthDate.getMonth();
   monthLabel.textContent = `${y}年 ${m+1}月`;
   const value = `${y}-${String(m+1).padStart(2,"0")}`;
   if ([...monthSelect.options].some(o => o.value === value)) {
@@ -835,12 +1015,12 @@ function fillPreview(container, raw) {
   });
 }
 
-function render() {
-  const y = current.getFullYear();
-  const m = current.getMonth();
+function renderMonth() {
+  const y = monthDate.getFullYear();
+  const m = monthDate.getMonth();
 
   updateMonthUI();
-  body.innerHTML = "";
+  calBody.innerHTML = "";
 
   const first = new Date(y, m, 1);
   const last = new Date(y, m+1, 0);
@@ -848,6 +1028,7 @@ function render() {
   let row = document.createElement("tr");
   let count = 0;
 
+  // 日曜始まり
   for (let i = 0; i < first.getDay(); i++) {
     row.appendChild(document.createElement("td"));
     count++;
@@ -858,7 +1039,7 @@ function render() {
 
   for (let d = 1; d <= last.getDate(); d++) {
     if (count === 7) {
-      body.appendChild(row);
+      calBody.appendChild(row);
       row = document.createElement("tr");
       count = 0;
     }
@@ -884,7 +1065,7 @@ function render() {
     if (events[key]) {
       const preview = document.createElement("div");
       preview.className = "record-preview";
-      fillPreview(preview, events[key]); // 種目名だけ
+      fillPreview(preview, events[key]);
       cell.appendChild(preview);
     }
 
@@ -894,20 +1075,113 @@ function render() {
     count++;
   }
 
-  body.appendChild(row);
+  calBody.appendChild(row);
 }
 
-/* 月移動ボタン */
-document.getElementById("prev").onclick = () => {
-  current.setMonth(current.getMonth()-1);
-  render();
+/* ------------------------------------------------------
+   週表示
+   - 日曜始まり1週間を横に並べる
+------------------------------------------------------ */
+function getWeekStart(date) {
+  const d = new Date(date);
+  const day = d.getDay(); // 0:日
+  d.setHours(0,0,0,0);
+  d.setDate(d.getDate() - day);
+  return d;
+}
+
+function renderWeek() {
+  const weekStart = getWeekStart(weekDate);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekStart.getDate() + 6);
+
+  const startStr = `${weekStart.getFullYear()}年${weekStart.getMonth()+1}月${weekStart.getDate()}日`;
+  const endStrMonth = weekEnd.getMonth()+1;
+  const endStr = `${weekEnd.getFullYear()}年${endStrMonth}月${weekEnd.getDate()}日`;
+  weekLabel.textContent = `${startStr} 〜 ${endStr}`;
+
+  weekBody.innerHTML = "";
+
+  const row = document.createElement("tr");
+  const today = new Date();
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
+
+    const y = d.getFullYear();
+    const m = d.getMonth();
+    const day = d.getDate();
+
+    const cell = document.createElement("td");
+
+    const num = document.createElement("div");
+    num.className = "day-number";
+    num.textContent = day;
+
+    if (i === 0) num.style.color = "red";
+    if (i === 6) num.style.color = "blue";
+
+    if (today.getFullYear()===y && today.getMonth()===m && today.getDate()===day) {
+      num.classList.add("today");
+    }
+
+    cell.appendChild(num);
+
+    const key = dateKey(y,m,day);
+    if (key===selectedDateKey) cell.classList.add("selected-day");
+
+    if (events[key]) {
+      const preview = document.createElement("div");
+      preview.className = "record-preview";
+      fillPreview(preview, events[key]);
+      cell.appendChild(preview);
+    }
+
+    cell.addEventListener("click", () => handleDateClick(key));
+
+    row.appendChild(cell);
+  }
+
+  weekBody.appendChild(row);
+}
+
+/* 週の前後移動 */
+document.getElementById("week-prev").onclick = () => {
+  weekDate.setDate(weekDate.getDate() - 7);
+  renderWeek();
 };
-document.getElementById("next").onclick = () => {
-  current.setMonth(current.getMonth()+1);
-  render();
+document.getElementById("week-next").onclick = () => {
+  weekDate.setDate(weekDate.getDate() + 7);
+  renderWeek();
 };
 
-render();
+/* ------------------------------------------------------
+   月移動ボタン
+------------------------------------------------------ */
+document.getElementById("prev").onclick = () => {
+  monthDate.setMonth(monthDate.getMonth()-1);
+  renderMonth();
+};
+document.getElementById("next").onclick = () => {
+  monthDate.setMonth(monthDate.getMonth()+1);
+  renderMonth();
+};
+
+/* ------------------------------------------------------
+   今のビューを再描画
+------------------------------------------------------ */
+function renderCurrentView() {
+  if (viewMode === "month") {
+    renderMonth();
+  } else {
+    renderWeek();
+  }
+}
+
+/* 初期描画 */
+renderMonth();
+weekDate = new Date(); // 初期週は今日を含む週
 </script>
 
 </body>
