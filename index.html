@@ -26,6 +26,7 @@
       height: 100%;
       box-sizing: border-box;
       background: #f7f7f7;
+      z-index: 0;
     }
 
     .container {
@@ -35,7 +36,7 @@
       overflow: hidden; /* カレンダー側も縦スクロール禁止 */
     }
 
-    /* ハンバーガーメニュー周り */
+    /* ハンバーガーメニュー */
     .top-bar {
       display: flex;
       align-items: center;
@@ -181,6 +182,7 @@
       max-height: 75vh;
       overflow-y: auto;
       transition: transform 0.3s ease;
+      z-index: 20;
     }
     .sheet.open {
       transform: translateX(-50%) translateY(0);
@@ -354,10 +356,11 @@
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.2s ease;
+      z-index: 30;
     }
     .side-menu-overlay.open {
       opacity: 1;
-      pointer-events: auto;
+      pointer-events: auto; /* メニュー開いてる間はここでタップを受ける */
     }
 
     .side-menu {
@@ -373,15 +376,29 @@
       transition: transform 0.2s ease;
       box-sizing: border-box;
       padding: 16px 12px;
+      z-index: 40;
     }
     .side-menu.open {
       transform: translateX(0);
     }
 
+    .side-menu-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
     .side-menu-title {
       font-weight: bold;
-      margin-bottom: 12px;
       font-size: 16px;
+    }
+
+    .side-menu-close {
+      border: none;
+      background: transparent;
+      font-size: 16px;
+      cursor: pointer;
     }
 
     .side-menu-item {
@@ -405,7 +422,10 @@
   <!-- サイドメニュー -->
   <div id="side-menu-overlay" class="side-menu-overlay"></div>
   <div id="side-menu" class="side-menu">
-    <div class="side-menu-title">表示切替</div>
+    <div class="side-menu-header">
+      <div class="side-menu-title">表示切替</div>
+      <button id="menu-close" class="side-menu-close">▲</button>
+    </div>
     <div id="menu-month" class="side-menu-item active">月表示</div>
     <div id="menu-week" class="side-menu-item">週表示</div>
   </div>
@@ -496,14 +516,13 @@ const note = document.getElementById("note");
 const sheetTitle = document.getElementById("sheet-title");
 const exerciseList = document.getElementById("exercise-list");
 const addExerciseBtn = document.getElementById("add-exercise");
-const calendarWrapper = document.getElementById("calendar-wrapper");
 const calendarTable = document.getElementById("calendar-table");
-const calendarContainer = document.querySelector(".container");
 const monthView = document.getElementById("month-view");
 
 const sideMenu = document.getElementById("side-menu");
 const sideMenuOverlay = document.getElementById("side-menu-overlay");
 const menuBtn = document.getElementById("menu-btn");
+const menuClose = document.getElementById("menu-close");
 const menuMonth = document.getElementById("menu-month");
 const menuWeek = document.getElementById("menu-week");
 
@@ -549,7 +568,7 @@ function getBodyPart(exName) {
 }
 function getBodyPartColor(label) {
   const cat = exerciseCategories.find(c => c.label === label);
-  return cat ? cat.color : "#999";
+  return cat ? c.color : "#999";
 }
 
 /* ------------------------------------------------------
@@ -792,15 +811,9 @@ function saveCurrentDayDebounced() {
 }
 
 /* ------------------------------------------------------
-   日付クリック → メモ欄開閉
+   日付クリック → メモ欄開く（＋同じ日でも開くように修正）
 ------------------------------------------------------ */
 function handleDateClick(key) {
-  if (selectedDateKey === key && sheet.classList.contains("open")) {
-    // 同じ日付タップ → バーだけ残して収納
-    sheet.classList.remove("open");
-    return;
-  }
-
   selectedDateKey = key;
   openSheet(key);
 }
@@ -966,6 +979,7 @@ function closeSideMenu() {
 }
 
 menuBtn.addEventListener("click", openSideMenu);
+menuClose.addEventListener("click", closeSideMenu);
 sideMenuOverlay.addEventListener("click", closeSideMenu);
 
 menuMonth.addEventListener("click", () => {
@@ -1182,7 +1196,7 @@ function renderCurrentView() {
 
 /* 初期描画 */
 renderMonth();
-weekDate = new Date();
+weekDate = new Date(); // 週表示用の初期値
 </script>
 
 </body>
