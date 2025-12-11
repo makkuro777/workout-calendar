@@ -54,7 +54,7 @@
     }
 
     .calendar-wrapper {
-      overflow: hidden; /* 横スワイプ時に見切れないように */
+      overflow: hidden;
       width: 100%;
     }
 
@@ -62,7 +62,7 @@
       width: 100%;
       border-collapse: collapse;
       table-layout: fixed;
-      transition: transform 0.0s ease; /* スワイプ時にJSで制御 */
+      transition: transform 0.0s ease;
     }
 
     th {
@@ -104,7 +104,6 @@
 
     .record-preview {
       font-size: 11px;
-      color: #444;
       margin-top: 4px;
       max-height: 32px;
       overflow: hidden;
@@ -124,7 +123,7 @@
 
     .sheet {
       position: fixed;
-      bottom: -400px;
+      bottom: -260px; /* 閉じているときはヘッダーだけ見えるくらいに下げる */
       left: 0;
       width: 100%;
       background: #fff;
@@ -365,7 +364,7 @@ let noteDebounceTimer = null;
 
 const repsMax = 20;
 
-/* 部位と色マップ */
+/* 部位＆色マップ */
 const exerciseCategories = [
   { label: "胸", color: "#e91e63", items: ["ベンチプレス","ダンベルプレス","インクラインスミスプレス","ペックフライ"] },
   { label: "背中", color: "#3f51b5", items: ["懸垂","ラットプルダウン","シーテッドロー","デッドリフト","フェイスプル"] },
@@ -393,7 +392,6 @@ function normalizeEvent(raw) {
   return { exercises: exs, note: raw.note || "" };
 }
 
-/* 部位取得＆色取得 */
 function getBodyPart(exName) {
   for (const cat of exerciseCategories) {
     if (cat.items.includes(exName)) return cat.label;
@@ -432,7 +430,7 @@ function getBodyPartColor(label) {
 })();
 
 /* ------------------------------------------------------
-   セレクト生成（レップ数）
+   レップ数セレクト
 ------------------------------------------------------ */
 function fillRepsSelect(sel, selected) {
   sel.innerHTML = "";
@@ -468,7 +466,7 @@ function createExerciseSelect(selected) {
 }
 
 /* ------------------------------------------------------
-   セット行（重量は数値入力・🗑削除付き）
+   セット行（重量は数値入力・🗑削除）
 ------------------------------------------------------ */
 function createSetRow(container, data) {
   const row = document.createElement("div");
@@ -516,9 +514,6 @@ function createSetRow(container, data) {
   return row;
 }
 
-/* ------------------------------------------------------
-   セット番号振り直し
------------------------------------------------------- */
 function renumberSets(container) {
   const rows = container.querySelectorAll(".set-row");
   rows.forEach((row, i) => {
@@ -594,7 +589,6 @@ function createExerciseBlock(data) {
   }
   renumberSets(sets);
 
-  // 初期表示時に部位バッジ更新
   updateExerciseBlockBodyPart(block);
 
   const addSetBtn = document.createElement("button");
@@ -649,28 +643,21 @@ function saveCurrentDayDebounced() {
 }
 
 /* ------------------------------------------------------
-   日付クリック → シート開閉（同じ日で閉じる）
+   日付クリック → メモシート開閉
+   同じ日をタップ → シートを「引っ込める」（ヘッダーだけ）
 ------------------------------------------------------ */
 function handleDateClick(key) {
-  if (sheet.classList.contains("open")) {
-    if (key === selectedDateKey) {
-      sheet.classList.remove("open");
-      selectedDateKey = "";
-      render();
-      return;
-    }
+  if (selectedDateKey === key && sheet.classList.contains("open")) {
+    // 同じ日付をもう一度 → 引っ込める（openを外すだけでヘッダー残る）
     sheet.classList.remove("open");
-    setTimeout(() => openSheet(key), 250);
-  } else {
-    openSheet(key);
+    return;
   }
+
+  selectedDateKey = key;
+  openSheet(key);
 }
 
 function openSheet(key) {
-  selectedDateKey = key;
-
-  render();
-
   const data = normalizeEvent(events[key]);
 
   sheetTitle.textContent = `${key} の筋トレ`;
@@ -685,6 +672,7 @@ function openSheet(key) {
   note.value = data.note || "";
 
   sheet.classList.add("open");
+  render();
 }
 
 /* ------------------------------------------------------
@@ -697,7 +685,6 @@ addExerciseBtn.addEventListener("click", () => {
 
 sheet.addEventListener("change", e => {
   if (e.target.matches("select")) {
-    // 種目変更なら部位バッジ更新
     if (e.target.matches(".exercise-select")) {
       const block = e.target.closest(".exercise-block");
       if (block) updateExerciseBlockBodyPart(block);
@@ -715,8 +702,9 @@ sheet.addEventListener("input", e => {
 note.addEventListener("input", () => saveCurrentDayDebounced());
 
 /* ------------------------------------------------------
-   シートの上下スワイプ（ハンドル部分のみ）
-   下にスワイプで閉じる（開くのは日付タップ）
+   メモシートのヘッダー上下スワイプ
+   下スワイプ → 引っ込める（open外す）
+   上スワイプ → open付与
 ------------------------------------------------------ */
 let sheetStartY = 0;
 let sheetDragging = false;
@@ -729,7 +717,7 @@ sheetHandle.addEventListener("touchstart", (e) => {
 
 sheetHandle.addEventListener("touchmove", (e) => {
   if (!sheetDragging) return;
-  // 縦方向だけ見たいので何もしなくてもOK（今回は単純に判定だけ）
+  // 今回は判定だけで、リアルタイム追従はしない
 });
 
 sheetHandle.addEventListener("touchend", (e) => {
@@ -739,17 +727,17 @@ sheetHandle.addEventListener("touchend", (e) => {
   const dy = endY - sheetStartY;
   const threshold = 40;
   if (dy > threshold && sheet.classList.contains("open")) {
-    // 下スワイプで閉じる
+    // 下スワイプ → 引っ込める
     sheet.classList.remove("open");
-    // 選択状態は残したまま（日付再タップでまた開ける）
+  } else if (dy < -threshold && !sheet.classList.contains("open")) {
+    // 上スワイプ → 全開
+    sheet.classList.add("open");
   }
-  // 上スワイプで開く動きは、シートが閉じているとハンドル自体見えないので
-  // 基本は「日付タップで開く」運用にしている
 });
 
 /* ------------------------------------------------------
-   スワイプで月移動（カレンダー＋その周辺の余白）
-   ※メモ欄は反応しない（別要素なのでOK）
+   スワイプで月移動（カレンダー＋余白）
+   ※メモシートにはバインドしてない
 ------------------------------------------------------ */
 let swipeStartX = 0;
 let swipeStartY = 0;
@@ -770,7 +758,7 @@ calendarContainer.addEventListener("touchmove", (e) => {
   const dx = t.clientX - swipeStartX;
   const dy = t.clientY - swipeStartY;
 
-  if (Math.abs(dy) > Math.abs(dx)) return; // 縦の動きが強いときは無視
+  if (Math.abs(dy) > Math.abs(dx)) return;
 
   calendarTable.style.transform = `translateX(${dx}px)`;
 });
@@ -789,7 +777,6 @@ calendarContainer.addEventListener("touchend", (e) => {
 
   if (Math.abs(dx) > threshold && Math.abs(dx) > Math.abs(dy)) {
     if (dx < 0) {
-      // 左スワイプ → 次の月
       calendarTable.style.transform = "translateX(-100%)";
       setTimeout(() => {
         current.setMonth(current.getMonth() + 1);
@@ -802,7 +789,6 @@ calendarContainer.addEventListener("touchend", (e) => {
         });
       }, 200);
     } else {
-      // 右スワイプ → 前の月
       calendarTable.style.transform = "translateX(100%)";
       setTimeout(() => {
         current.setMonth(current.getMonth() - 1);
@@ -821,7 +807,7 @@ calendarContainer.addEventListener("touchend", (e) => {
 });
 
 /* ------------------------------------------------------
-   カレンダー描画
+   カレンダー描画（種目名だけ色付きバッジ表示）
 ------------------------------------------------------ */
 function updateMonthUI() {
   const y = current.getFullYear();
@@ -844,11 +830,7 @@ function fillPreview(container, raw) {
     const chip = document.createElement("span");
     chip.className = "exercise-chip";
     chip.textContent = ex.exercise;
-    if (part) {
-      chip.style.backgroundColor = getBodyPartColor(part);
-    } else {
-      chip.style.backgroundColor = "#999";
-    }
+    chip.style.backgroundColor = part ? getBodyPartColor(part) : "#999";
     container.appendChild(chip);
   });
 }
@@ -902,7 +884,7 @@ function render() {
     if (events[key]) {
       const preview = document.createElement("div");
       preview.className = "record-preview";
-      fillPreview(preview, events[key]); // 種目名だけを色付きバッジで表示
+      fillPreview(preview, events[key]); // 種目名だけ
       cell.appendChild(preview);
     }
 
