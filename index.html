@@ -32,6 +32,7 @@
       height: 100%;
       padding: 8px 8px 80px;
       box-sizing: border-box;
+      overflow: hidden; /* カレンダー側も縦スクロール禁止 */
     }
 
     /* ハンバーガーメニュー周り */
@@ -169,7 +170,7 @@
     .sheet {
       position: fixed;
       left: 50%;
-      transform: translateX(-50%) translateY(calc(100% - 24px)); /* デフォはバーだけ見える */
+      transform: translateX(-50%) translateY(calc(100% - 24px)); /* バーだけ見える状態 */
       width: 380px;
       max-width: 100%;
       background: #fff;
@@ -479,8 +480,8 @@
 /* ------------------------------------------------------
    基本データ
 ------------------------------------------------------ */
-let monthDate = new Date();           // 月表示用
-let weekDate = new Date();            // 週表示用の基準日（属する週）
+let monthDate = new Date();   // 月表示用
+let weekDate = new Date();    // 週表示用の基準日
 const events = JSON.parse(localStorage.getItem("workout") || "{}");
 
 const monthLabel = document.getElementById("month-label");
@@ -498,6 +499,7 @@ const addExerciseBtn = document.getElementById("add-exercise");
 const calendarWrapper = document.getElementById("calendar-wrapper");
 const calendarTable = document.getElementById("calendar-table");
 const calendarContainer = document.querySelector(".container");
+const monthView = document.getElementById("month-view");
 
 const sideMenu = document.getElementById("side-menu");
 const sideMenuOverlay = document.getElementById("side-menu-overlay");
@@ -551,7 +553,7 @@ function getBodyPartColor(label) {
 }
 
 /* ------------------------------------------------------
-   年月プルダウン初期化（広めに）
+   年月プルダウン初期化
 ------------------------------------------------------ */
 (function initMonthSelect() {
   const baseYear = new Date().getFullYear();
@@ -794,7 +796,7 @@ function saveCurrentDayDebounced() {
 ------------------------------------------------------ */
 function handleDateClick(key) {
   if (selectedDateKey === key && sheet.classList.contains("open")) {
-    // 同じ日付をタップしたら、バーだけ残して閉じる
+    // 同じ日付タップ → バーだけ残して収納
     sheet.classList.remove("open");
     return;
   }
@@ -870,7 +872,7 @@ sheetHandle.addEventListener("touchend", (e) => {
   const dy = endY - sheetStartY;
   const threshold = 40;
   if (dy > threshold && sheet.classList.contains("open")) {
-    // 下スワイプ → 引っ込める（バーだけ残す）
+    // 下スワイプ → 収納（バーだけ）
     sheet.classList.remove("open");
   } else if (dy < -threshold && !sheet.classList.contains("open")) {
     // 上スワイプ → 全開
@@ -879,14 +881,14 @@ sheetHandle.addEventListener("touchend", (e) => {
 });
 
 /* ------------------------------------------------------
-   カレンダー横スワイプ（縦は動かない）
+   カレンダー横スワイプ（月表示のみ・縦は無視）
 ------------------------------------------------------ */
 let swipeStartX = 0;
 let swipeStartY = 0;
 let isSwiping = false;
 
-calendarContainer.addEventListener("touchstart", (e) => {
-  if (viewMode !== "month") return; // 月表示のときだけ
+monthView.addEventListener("touchstart", (e) => {
+  if (viewMode !== "month") return;
   if (e.touches.length !== 1) return;
   const t = e.touches[0];
   swipeStartX = t.clientX;
@@ -895,18 +897,18 @@ calendarContainer.addEventListener("touchstart", (e) => {
   calendarTable.style.transition = "none";
 });
 
-calendarContainer.addEventListener("touchmove", (e) => {
+monthView.addEventListener("touchmove", (e) => {
   if (!isSwiping || viewMode !== "month") return;
   const t = e.touches[0];
   const dx = t.clientX - swipeStartX;
   const dy = t.clientY - swipeStartY;
 
-  if (Math.abs(dy) > Math.abs(dx)) return; // 縦の動きは無視
+  if (Math.abs(dy) > Math.abs(dx)) return; // 縦の動きは完全無視
 
   calendarTable.style.transform = `translateX(${dx}px)`;
 });
 
-calendarContainer.addEventListener("touchend", (e) => {
+monthView.addEventListener("touchend", (e) => {
   if (!isSwiping || viewMode !== "month") return;
   isSwiping = false;
 
@@ -952,7 +954,7 @@ calendarContainer.addEventListener("touchend", (e) => {
 });
 
 /* ------------------------------------------------------
-   サイドメニュー開閉 & 表示切り替え
+   サイドメニュー開閉 & 表示切替
 ------------------------------------------------------ */
 function openSideMenu() {
   sideMenu.classList.add("open");
@@ -987,7 +989,7 @@ menuWeek.addEventListener("click", () => {
 });
 
 /* ------------------------------------------------------
-   カレンダー描画（種目名だけ色付きバッジ表示）
+   カレンダー描画（種目名だけバッジ表示）
 ------------------------------------------------------ */
 function updateMonthUI() {
   const y = monthDate.getFullYear();
@@ -1079,8 +1081,7 @@ function renderMonth() {
 }
 
 /* ------------------------------------------------------
-   週表示
-   - 日曜始まり1週間を横に並べる
+   週表示（日曜始まり 1行）
 ------------------------------------------------------ */
 function getWeekStart(date) {
   const d = new Date(date);
@@ -1181,7 +1182,7 @@ function renderCurrentView() {
 
 /* 初期描画 */
 renderMonth();
-weekDate = new Date(); // 初期週は今日を含む週
+weekDate = new Date();
 </script>
 
 </body>
