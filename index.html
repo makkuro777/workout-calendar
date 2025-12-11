@@ -5,12 +5,18 @@
   <title>筋トレカレンダー</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
+    :root {
+      --sheet-handle-visible: 28px;
+    }
+
     body {
       margin: 0;
       font-family: system-ui, sans-serif;
       background: #f7f7f7;
       display: flex;
       justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
     }
 
     .container {
@@ -19,6 +25,7 @@
       margin-top: 20px;
       padding: 0 8px 80px;
       box-sizing: border-box;
+      touch-action: pan-x;
     }
 
     .calendar-header {
@@ -56,6 +63,7 @@
     .calendar-wrapper {
       overflow: hidden;
       width: 100%;
+      touch-action: pan-x;
     }
 
     table {
@@ -123,20 +131,21 @@
 
     .sheet {
       position: fixed;
-      bottom: -260px; /* 閉じているときはヘッダーだけ見えるくらいに下げる */
+      bottom: 0;
       left: 0;
       width: 100%;
       background: #fff;
       border-radius: 16px 16px 0 0;
-      padding: 16px;
+      padding: 12px 16px 16px;
       box-shadow: 0 -5px 20px rgba(0,0,0,0.15);
-      transition: bottom 0.3s ease;
+      transition: transform 0.3s ease;
       box-sizing: border-box;
       max-height: 75vh;
       overflow-y: auto;
+      transform: translateY(calc(100% - var(--sheet-handle-visible)));
     }
     .sheet.open {
-      bottom: 0;
+      transform: translateY(0);
     }
 
     .sheet-handle {
@@ -515,31 +524,14 @@ function createSetRow(container, data) {
 }
 
 function renumberSets(container) {
-  const rows = container.querySelectorAll(".set-row");
-  rows.forEach((row, i) => {
-    row.querySelector(".set-label").textContent = `セット ${i+1}`;
+  [...container.querySelectorAll(".set-label")].forEach((lab, idx) => {
+    lab.textContent = `セット${idx+1}`;
   });
 }
 
 /* ------------------------------------------------------
-   種目ブロック（部位バッジ付き）
+   種目ブロック
 ------------------------------------------------------ */
-function updateExerciseBlockBodyPart(block) {
-  const select = block.querySelector(".exercise-select");
-  const badge = block.querySelector(".body-part-badge");
-  if (!select || !badge) return;
-  const name = select.value;
-  const part = getBodyPart(name);
-  if (part) {
-    badge.textContent = part;
-    badge.style.backgroundColor = getBodyPartColor(part);
-    badge.style.display = "inline-block";
-  } else {
-    badge.textContent = "";
-    badge.style.display = "none";
-  }
-}
-
 function createExerciseBlock(data) {
   const block = document.createElement("div");
   block.className = "exercise-block";
@@ -547,124 +539,91 @@ function createExerciseBlock(data) {
   const header = document.createElement("div");
   header.className = "exercise-header";
 
-  const leftHeader = document.createElement("div");
-
-  const title = document.createElement("span");
+  const title = document.createElement("div");
   title.className = "exercise-title";
-  title.textContent = "種目";
+  title.textContent = data.exercise || "種目";
+  header.appendChild(title);
 
   const badge = document.createElement("span");
   badge.className = "body-part-badge";
-  badge.style.display = "none";
+  badge.style.backgroundColor = "#999";
+  badge.textContent = data.exercise ? (getBodyPart(data.exercise) || "部位") : "部位";
+  header.appendChild(badge);
 
-  leftHeader.appendChild(title);
-  leftHeader.appendChild(badge);
-
-  const del = document.createElement("button");
-  del.className = "remove-exercise";
-  del.textContent = "削除";
-  del.addEventListener("click", () => {
+  const removeBtn = document.createElement("button");
+  removeBtn.className = "remove-exercise";
+  removeBtn.textContent = "削除";
+  removeBtn.addEventListener("click", () => {
     block.remove();
     saveCurrentDay();
   });
+  header.appendChild(removeBtn);
 
-  header.appendChild(leftHeader);
-  header.appendChild(del);
   block.appendChild(header);
 
-  const wrap = document.createElement("div");
-  wrap.className = "exercise-select-wrapper";
-  const exSel = createExerciseSelect(data.exercise);
-  wrap.appendChild(exSel);
-  block.appendChild(wrap);
+  const sel = createExerciseSelect(data.exercise);
+  sel.classList.add("exercise-select");
+  sel.addEventListener("change", () => {
+    updateExerciseBlockBodyPart(block);
+    saveCurrentDay();
+  });
 
-  const sets = document.createElement("div");
-  sets.className = "sets-container";
-  block.appendChild(sets);
+  const selWrap = document.createElement("div");
+  selWrap.className = "exercise-select-wrapper";
+  selWrap.appendChild(sel);
+  block.appendChild(selWrap);
 
-  if (data.sets?.length) {
-    data.sets.forEach(s => sets.appendChild(createSetRow(sets, s)));
+  const setsContainer = document.createElement("div");
+  setsContainer.className = "sets-container";
+  block.appendChild(setsContainer);
+
+  if (data.sets && data.sets.length > 0) {
+    data.sets.forEach(s => setsContainer.appendChild(createSetRow(setsContainer, s)));
   } else {
-    sets.appendChild(createSetRow(sets, {weight:"", reps:""}));
+    setsContainer.appendChild(createSetRow(setsContainer, {weight:"", reps:""}));
   }
-  renumberSets(sets);
-
-  updateExerciseBlockBodyPart(block);
+  renumberSets(setsContainer);
 
   const addSetBtn = document.createElement("button");
   addSetBtn.className = "add-set-btn";
-  addSetBtn.textContent = "＋ セット追加";
+  addSetBtn.textContent = "＋ セットを追加";
   addSetBtn.addEventListener("click", () => {
-    sets.appendChild(createSetRow(sets, {weight:"", reps:""}));
-    renumberSets(sets);
+    setsContainer.appendChild(createSetRow(setsContainer, {weight:"", reps:""}));
+    renumberSets(setsContainer);
     saveCurrentDay();
   });
   block.appendChild(addSetBtn);
 
+  updateExerciseBlockBodyPart(block);
+
   return block;
 }
 
-/* ------------------------------------------------------
-   オートセーブ
------------------------------------------------------- */
-function saveCurrentDay() {
-  if (!selectedDateKey) return;
-
-  const blocks = [...document.querySelectorAll(".exercise-block")];
-  const exercises = [];
-
-  blocks.forEach(b => {
-    const ex = b.querySelector(".exercise-select").value;
-
-    const setRows = b.querySelectorAll(".set-row");
-    const sets = [...setRows].map(row => ({
-      weight: row.querySelector(".weight-input").value,
-      reps: row.querySelector(".reps-select").value
-    })).filter(s => s.weight || s.reps);
-
-    if (ex || sets.length > 0) exercises.push({ exercise: ex, sets });
-  });
-
-  const noteText = note.value.trim();
-
-  if (exercises.length > 0 || noteText) {
-    events[selectedDateKey] = { exercises, note: noteText };
-  } else {
-    delete events[selectedDateKey];
-  }
-
-  localStorage.setItem("workout", JSON.stringify(events));
-  render();
-}
-
-function saveCurrentDayDebounced() {
-  clearTimeout(noteDebounceTimer);
-  noteDebounceTimer = setTimeout(saveCurrentDay, 500);
+function updateExerciseBlockBodyPart(block) {
+  const sel = block.querySelector(".exercise-select");
+  const badge = block.querySelector(".body-part-badge");
+  const title = block.querySelector(".exercise-title");
+  const exName = sel.value;
+  const part = getBodyPart(exName);
+  badge.textContent = part || "部位";
+  badge.style.backgroundColor = getBodyPartColor(part);
+  title.textContent = exName || "種目";
 }
 
 /* ------------------------------------------------------
-   日付クリック → メモシート開閉
-   同じ日をタップ → シートを「引っ込める」（ヘッダーだけ）
+   日付セルクリック
 ------------------------------------------------------ */
 function handleDateClick(key) {
-  if (selectedDateKey === key && sheet.classList.contains("open")) {
-    // 同じ日付をもう一度 → 引っ込める（openを外すだけでヘッダー残る）
-    sheet.classList.remove("open");
-    return;
-  }
-
   selectedDateKey = key;
-  openSheet(key);
-}
-
-function openSheet(key) {
   const data = normalizeEvent(events[key]);
 
-  sheetTitle.textContent = `${key} の筋トレ`;
-  exerciseList.innerHTML = "";
+  sheetTitle.textContent = key.replace(/-/g, "/");
 
+  exerciseList.innerHTML = "";
   if (data.exercises.length) {
-    data.exercises.forEach(ex => exerciseList.appendChild(createExerciseBlock(ex)));
+    data.exercises.forEach(ex => {
+      exerciseList.appendChild(createExerciseBlock(ex));
+    });
   } else {
     exerciseList.appendChild(createExerciseBlock({}));
   }
@@ -673,6 +632,36 @@ function openSheet(key) {
 
   sheet.classList.add("open");
   render();
+}
+
+/* ------------------------------------------------------
+   保存系
+------------------------------------------------------ */
+function saveCurrentDay() {
+  if (!selectedDateKey) return;
+
+  const blocks = [...exerciseList.querySelectorAll(".exercise-block")].map(block => {
+    const exercise = block.querySelector(".exercise-select").value;
+    const sets = [...block.querySelectorAll(".set-row")].map(row => {
+      return {
+        weight: row.querySelector(".weight-input").value,
+        reps: row.querySelector(".reps-select").value
+      };
+    });
+    return { exercise, sets };
+  });
+
+  events[selectedDateKey] = {
+    exercises: blocks,
+    note: note.value
+  };
+  localStorage.setItem("workout", JSON.stringify(events));
+  render();
+}
+
+function saveCurrentDayDebounced() {
+  clearTimeout(noteDebounceTimer);
+  noteDebounceTimer = setTimeout(saveCurrentDay, 500);
 }
 
 /* ------------------------------------------------------
