@@ -7,6 +7,7 @@
   <style>
     :root {
       --sheet-handle-visible: 28px;
+      --sheet-closed-offset: calc(100% - var(--sheet-handle-visible));
     }
 
     body {
@@ -138,11 +139,12 @@
       border-radius: 16px 16px 0 0;
       padding: 12px 16px 16px;
       box-shadow: 0 -5px 20px rgba(0,0,0,0.15);
-      transition: transform 0.3s ease;
+      transition: transform 0.24s ease;
       box-sizing: border-box;
       max-height: 75vh;
       overflow-y: auto;
-      transform: translateY(calc(100% - var(--sheet-handle-visible)));
+      transform: translateY(var(--sheet-closed-offset));
+      touch-action: pan-y;
     }
     .sheet.open {
       transform: translateY(0);
@@ -231,7 +233,7 @@
     .set-row {
       border: 1px solid #ddd;
       border-radius: 6px;
-      padding: 6px 32px 6px 6px; /* 右上🗑用 */
+      padding: 6px 32px 6px 6px;
       background: #fff;
       position: relative;
     }
@@ -613,7 +615,7 @@ function updateExerciseBlockBodyPart(block) {
 /* ------------------------------------------------------
    日付セルクリック
 ------------------------------------------------------ */
-function handleDateClick(key) {
+function openSheetForDate(key) {
   selectedDateKey = key;
   const data = normalizeEvent(events[key]);
 
@@ -632,6 +634,10 @@ function handleDateClick(key) {
 
   sheet.classList.add("open");
   render();
+}
+
+function handleDateClick(key) {
+  openSheetForDate(key);
 }
 
 /* ------------------------------------------------------
@@ -691,37 +697,126 @@ sheet.addEventListener("input", e => {
 note.addEventListener("input", () => saveCurrentDayDebounced());
 
 /* ------------------------------------------------------
-   メモシートのヘッダー上下スワイプ
-   下スワイプ → 引っ込める（open外す）
-   上スワイプ → open付与
+   メモシートのドラッグ制御（シート全体で操作可）
 ------------------------------------------------------ */
 let sheetStartY = 0;
 let sheetDragging = false;
+let sheetDragStarted = false;
+let sheetStartX = 0;
+let sheetStartTransform = 0;
+let sheetWasScrollable = true;
+const dragStartThreshold = 6;
 
-sheetHandle.addEventListener("touchstart", (e) => {
-  if (e.touches.length !== 1) return;
-  sheetStartY = e.touches[0].clientY;
+function getSheetCurrentY() {
+  const matrix = window.getComputedStyle(sheet).transform;
+  if (matrix === "none") return 0;
+  const parts = matrix.match(/matrix\\(.*\\)/);
+  if (!parts) return 0;
+  const values = parts[1].split(",").map(v => parseFloat(v.trim()));
+  return values.length === 6 ? values[5] : 0;
+}
+
+function clampSheetY(y) {
+  const max = parseFloat(getComputedStyle(sheet).height) * 0;
+  const closed = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--sheet-closed-offset"));
+  return Math.min(Math.max(y, -max), closed);
+}
+
+function setSheetY(y, withTransition = false) {
+  sheet.style.transition = withTransition ? "transform 0.2s ease" : "none";
+  sheet.style.transform = `translateY(${y}px)`;
+}
+
+function recalcSheetClosedOffset() {
+  const handle = document.querySelector(".sheet-handle");
+  const visible = handle ? handle.offsetHeight + parseFloat(getComputedStyle(sheet).paddingTop) + parseFloat(getComputedStyle(sheet).paddingBottom) - 4 : 28;
+  document.documentElement.style.setProperty("--sheet-closed-offset", `calc(100% - ${visible}px)`);
+}
+window.addEventListener("resize", recalcSheetClosedOffset);
+recalcSheetClosedOffset();
+
+function beginSheetDrag(e) {
   sheetDragging = true;
-});
+  sheetDragStarted = false;
+  sheetStartY = e.clientY;
+  sheetStartX = e.clientX;
+  sheetStartTransform = getSheetCurrentY();
+  sheetWasScrollable = sheet.style.overflowY !== "hidden";
+}
 
-sheetHandle.addEventListener("touchmove", (e) => {
+function maybeStartSheetDrag(e) {
+  if (!sheetDragging || sheetDragStarted) return;
+  const dx = e.clientX - sheetStartX;
+  const dy = e.clientY - sheetStartY;
+  if (Math.abs(dy) < dragStartThreshold || Math.abs(dy) < Math.abs(dx)) return;
+  sheetDragStarted = true;
+  sheet.style.overflowY = "hidden";
+  sheet.style.touchAction = "none";
+}
+
+function handleSheetDragMove(e) {
   if (!sheetDragging) return;
-  // 今回は判定だけで、リアルタイム追従はしない
-});
+  maybeStartSheetDrag(e);
+  if (!sheetDragStarted) return;
 
-sheetHandle.addEventListener("touchend", (e) => {
+  const dy = e.clientY - sheetStartY;
+  const target = clampSheetY(sheetStartTransform + dy);
+  setSheetY(target, false);
+}
+
+function finishSheetDrag(e) {
   if (!sheetDragging) return;
   sheetDragging = false;
-  const endY = e.changedTouches[0].clientY;
-  const dy = endY - sheetStartY;
+
+  const dy = e.clientY - sheetStartY;
   const threshold = 40;
-  if (dy > threshold && sheet.classList.contains("open")) {
-    // 下スワイプ → 引っ込める
-    sheet.classList.remove("open");
-  } else if (dy < -threshold && !sheet.classList.contains("open")) {
-    // 上スワイプ → 全開
-    sheet.classList.add("open");
+  const currentY = getSheetCurrentY();
+  const closedOffset = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--sheet-closed-offset"));
+
+  sheet.style.overflowY = sheetWasScrollable ? "auto" : "hidden";
+  sheet.style.touchAction = "";
+
+  if (sheetDragStarted) {
+    if (dy > threshold) {
+      setSheetY(closedOffset, true);
+      sheet.classList.remove("open");
+    } else if (dy < -threshold) {
+      setSheetY(0, true);
+      sheet.classList.add("open");
+    } else {
+      setSheetY(currentY < closedOffset / 2 ? 0 : closedOffset, true);
+      sheet.classList.toggle("open", currentY < closedOffset / 2);
+    }
   }
+  sheetDragStarted = false;
+}
+
+function cancelSheetDrag() {
+  sheetDragging = false;
+  sheetDragStarted = false;
+  sheet.style.overflowY = sheetWasScrollable ? "auto" : "hidden";
+  sheet.style.touchAction = "";
+  setSheetY(sheet.classList.contains("open") ? 0 : parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--sheet-closed-offset")), true);
+}
+
+sheet.addEventListener("pointerdown", (e) => {
+  if (e.pointerType === "mouse" && e.button !== 0) return;
+  beginSheetDrag(e);
+});
+
+sheet.addEventListener("pointermove", (e) => {
+  if (!sheetDragging) return;
+  handleSheetDragMove(e);
+});
+
+sheet.addEventListener("pointerup", (e) => {
+  finishSheetDrag(e);
+});
+
+sheet.addEventListener("pointercancel", cancelSheetDrag);
+sheet.addEventListener("pointerleave", (e) => {
+  if (!sheetDragging) return;
+  finishSheetDrag(e);
 });
 
 /* ------------------------------------------------------
