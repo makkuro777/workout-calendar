@@ -5,137 +5,52 @@
   <title>筋トレカレンダー</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      overflow: hidden;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
-      background: #f7f7f7;
-    }
-
     body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background: #f7f7f7;
       display: flex;
       justify-content: center;
-      align-items: stretch;
-    }
-
-    .app {
-      position: relative;
-      width: 380px;
-      max-width: 100%;
-      height: 100%;
-      background: #f7f7f7;
-      overflow: hidden;
     }
 
     .container {
-      height: 100%;
-      padding: 8px;
-      overflow: hidden;
+      width: 380px;
+      max-width: 100%;
+      margin-top: 20px;
+      padding: 0 8px 80px;
       box-sizing: border-box;
     }
 
-    /* --- メニュー --- */
-    .top-bar {
-      display: flex;
-      align-items: center;
-      margin-bottom: 4px;
-    }
-    .menu-btn {
-      font-size: 22px;
-      background: transparent;
-      border: none;
-      padding: 4px;
-      cursor: pointer;
-    }
-
-    .side-menu-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.4);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s;
-      z-index: 30;
-    }
-    .side-menu-overlay.open {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    .side-menu {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 70%;
-      max-width: 280px;
-      height: 100%;
-      background: #fff;
-      transform: translateX(-100%);
-      transition: transform 0.25s;
-      padding: 16px;
-      z-index: 40;
-      box-shadow: 2px 0 10px rgba(0,0,0,0.3);
-      box-sizing: border-box;
-    }
-    .side-menu.open {
-      transform: translateX(0);
-    }
-
-    .side-menu-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-    .side-menu-title {
-      font-size: 16px;
-      font-weight: bold;
-    }
-    .side-menu-close {
-      border: none;
-      background: transparent;
-      font-size: 16px;
-      cursor: pointer;
-    }
-
-    .side-menu-item {
-      padding: 10px;
-      border-radius: 8px;
-      font-size: 14px;
-      cursor: pointer;
-      margin-bottom: 4px;
-    }
-    .side-menu-item.active {
-      background: #e3f2fd;
-      color: #1976d2;
-      font-weight: bold;
-    }
-
-    /* --- カレンダー --- */
     .calendar-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 4px;
-      margin-bottom: 5px;
+      margin-bottom: 8px;
+      gap: 6px;
+    }
+
+    .month-label {
+      font-size: 18px;
+      font-weight: bold;
+      text-align: center;
+      flex: 1;
     }
 
     .nav-btn {
       border: none;
       background: #e0e0e0;
-      padding: 4px 8px;
+      padding: 6px 10px;
       border-radius: 6px;
-      font-size: 13px;
       cursor: pointer;
+      white-space: nowrap;
     }
 
-    .month-label {
-      flex: 1;
-      text-align: center;
-      font-size: 18px;
-      font-weight: bold;
+    .month-select {
+      font-size: 12px;
+      padding: 4px 6px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      background-color: #fff;
     }
 
     .calendar-wrapper {
@@ -147,171 +62,190 @@
       width: 100%;
       border-collapse: collapse;
       table-layout: fixed;
-      transition: transform 0.2s ease;
+      transition: transform 0.0s ease;
     }
 
     th {
-      font-size: 13px;
       padding: 4px 0;
+      font-size: 13px;
     }
     th:nth-child(1) { color: red; }
     th:nth-child(7) { color: blue; }
 
     td {
-      height: 60px;
-      border: 1px solid #ddd;
-      vertical-align: top;
+      height: 64px;
+      border: 1px solid #eaeaea;
       padding: 4px;
-      background: #fff;
       cursor: pointer;
+      background: #fff;
+      vertical-align: top;
+      box-sizing: border-box;
     }
-
-    .day-number {
-      font-weight: bold;
-      font-size: 12px;
-      width: 24px;
-      height: 24px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .today {
-      background: rgba(25,118,210,0.16);
-      border-radius: 50%;
+    td:hover {
+      background: #f0f8ff;
     }
     .selected-day {
       background: #fff9c4 !important;
     }
 
+    .day-number {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 12px;
+    }
+    .day-number.today {
+      background-color: rgba(25, 118, 210, 0.16);
+      border-radius: 50%;
+    }
+
     .record-preview {
       font-size: 11px;
-      margin-top: 2px;
+      margin-top: 4px;
       max-height: 32px;
       overflow: hidden;
       display: flex;
       flex-wrap: wrap;
-      gap: 2px;
+      gap: 4px;
     }
 
     .exercise-chip {
       display: inline-block;
       padding: 2px 6px;
-      font-size: 10px;
       border-radius: 999px;
+      font-size: 10px;
       color: #fff;
       white-space: nowrap;
     }
 
-    /* --- メモシート --- */
     .sheet {
       position: fixed;
+      bottom: -260px; /* 閉じているときはヘッダーだけ見えるくらいに下げる */
       left: 0;
-      right: 0;
-      bottom: 0;
-      margin: 0 auto;
-      max-width: 380px;
+      width: 100%;
       background: #fff;
       border-radius: 16px 16px 0 0;
-      box-shadow: 0 -4px 10px rgba(0,0,0,0.2);
+      padding: 16px;
+      box-shadow: 0 -5px 20px rgba(0,0,0,0.15);
+      transition: bottom 0.3s ease;
       box-sizing: border-box;
       max-height: 75vh;
       overflow-y: auto;
-      transition: height 0.25s;
     }
-
-    .sheet.closed {
-      height: 24px;
-      overflow: hidden;
-      padding: 6px 12px 6px;
-    }
-
     .sheet.open {
-      height: auto;
-      padding: 8px 12px 12px;
+      bottom: 0;
     }
 
     .sheet-handle {
       width: 100%;
       display: flex;
       justify-content: center;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
       touch-action: pan-y;
     }
     .sheet-handle-bar {
       width: 40px;
-      height: 12px;
-      border-radius: 6px;
+      height: 4px;
+      border-radius: 999px;
       background: #ccc;
     }
 
     .sheet-title {
       font-weight: bold;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
       font-size: 14px;
     }
 
+    .exercise-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
     .exercise-block {
-      background: #fafafa;
       border: 1px solid #eee;
       border-radius: 8px;
       padding: 8px;
-      margin-bottom: 8px;
+      background: #fafafa;
     }
 
     .exercise-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
+      gap: 4px;
     }
 
     .exercise-title {
       font-size: 13px;
-      font-weight: bold;
+      font-weight: 600;
     }
 
     .body-part-badge {
+      display: inline-block;
       padding: 2px 6px;
-      font-size: 10px;
       border-radius: 999px;
+      font-size: 10px;
       color: #fff;
       margin-left: 4px;
     }
 
     .remove-exercise {
-      color: #d32f2f;
-      background: none;
-      border: none;
       font-size: 12px;
+      border: none;
+      background: transparent;
+      color: #d32f2f;
       cursor: pointer;
     }
 
+    .exercise-select-wrapper select {
+      width: 100%;
+      padding: 6px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 13px;
+      background-color: #fff;
+      box-sizing: border-box;
+    }
+
+    .sets-container {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
     .set-row {
-      position: relative;
       border: 1px solid #ddd;
       border-radius: 6px;
-      padding: 6px 30px 6px 6px;
-      margin-top: 6px;
+      padding: 6px 32px 6px 6px; /* 右上🗑用 */
       background: #fff;
+      position: relative;
     }
 
     .set-label {
       font-size: 12px;
+      margin-bottom: 3px;
       color: #555;
-      margin-bottom: 2px;
     }
 
     .set-fields {
       display: flex;
       gap: 4px;
+      align-items: center;
     }
+
     .set-fields input,
     .set-fields select {
-      flex: 1;
       font-size: 12px;
       padding: 4px;
-      border-radius: 4px;
+      border-radius: 6px;
       border: 1px solid #ccc;
+      flex: 1;
       box-sizing: border-box;
     }
 
@@ -319,159 +253,119 @@
       position: absolute;
       top: 6px;
       right: 6px;
+      background: none;
+      border: none;
       font-size: 16px;
       color: #d32f2f;
-      border: none;
-      background: none;
       cursor: pointer;
+      padding: 0;
+      line-height: 1;
     }
 
-    .add-set-btn,
-    .add-exercise-btn {
-      padding: 6px 10px;
+    .add-set-btn {
+      margin-top: 6px;
+      padding: 5px 10px;
       border-radius: 999px;
       border: 1px dashed #999;
       background: #fff;
-      font-size: 12px;
+      color: #555;
+      font-size: 11px;
       cursor: pointer;
-      margin-top: 6px;
-    }
-    .add-exercise-btn {
-      width: 100%;
-      border-color: #1976d2;
-      color: #1976d2;
-      background: #e3f2fd;
-      font-weight: 600;
-      margin-top: 8px;
     }
 
-    #note {
+    .add-exercise-btn {
       width: 100%;
-      margin-top: 8px;
+      margin-top: 4px;
+      margin-bottom: 8px;
+      padding: 8px;
+      border-radius: 999px;
+      border: 1px dashed #1976d2;
+      background: #e3f2fd;
+      color: #1976d2;
       font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .note-row {
+      margin-top: 8px;
+    }
+    .note-row textarea {
+      width: 100%;
       padding: 6px;
-      border-radius: 6px;
       border: 1px solid #ccc;
-      box-sizing: border-box;
+      border-radius: 6px;
+      font-size: 13px;
+      resize: vertical;
     }
   </style>
 </head>
+
 <body>
-<div class="app">
-  <!-- メニューのオーバーレイ -->
-  <div id="menu-overlay" class="side-menu-overlay"></div>
 
-  <!-- サイドメニュー -->
-  <div id="side-menu" class="side-menu">
-    <div class="side-menu-header">
-      <div class="side-menu-title">表示切替</div>
-      <button id="menu-close" class="side-menu-close">▲</button>
-    </div>
-    <div id="menu-month" class="side-menu-item active">月表示</div>
-    <div id="menu-week" class="side-menu-item">週表示</div>
+<div class="container" id="calendar-container">
+  <div class="calendar-header">
+    <button id="prev" class="nav-btn">＜</button>
+    <div class="month-label" id="month-label"></div>
+    <select id="month-select" class="month-select"></select>
+    <button id="next" class="nav-btn">＞</button>
   </div>
 
-  <div class="container">
-    <div class="top-bar">
-      <button id="menu-btn" class="menu-btn">☰</button>
-    </div>
-
-    <!-- 月表示 -->
-    <div id="month-view">
-      <div class="calendar-header">
-        <button id="prev" class="nav-btn">＜</button>
-        <div id="month-label" class="month-label"></div>
-        <select id="month-select"></select>
-        <button id="next" class="nav-btn">＞</button>
-      </div>
-
-      <div class="calendar-wrapper" id="calendar-wrapper">
-        <table id="calendar-table">
-          <thead>
-            <tr>
-              <th>日</th><th>月</th><th>火</th><th>水</th>
-              <th>木</th><th>金</th><th>土</th>
-            </tr>
-          </thead>
-          <tbody id="calendar-body"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- 週表示 -->
-    <div id="week-view" style="display:none;">
-      <div class="calendar-header">
-        <button id="week-prev" class="nav-btn">＜</button>
-        <div id="week-label" class="month-label"></div>
-        <button id="week-next" class="nav-btn">＞</button>
-      </div>
-      <div class="calendar-wrapper">
-        <table id="week-table">
-          <thead>
-            <tr>
-              <th>日</th><th>月</th><th>火</th><th>水</th>
-              <th>木</th><th>金</th><th>土</th>
-            </tr>
-          </thead>
-          <tbody id="week-body"></tbody>
-        </table>
-      </div>
-    </div>
+  <div class="calendar-wrapper" id="calendar-wrapper">
+    <table id="calendar-table">
+      <thead>
+        <tr>
+          <th>日</th><th>月</th><th>火</th><th>水</th>
+          <th>木</th><th>金</th><th>土</th>
+        </tr>
+      </thead>
+      <tbody id="calendar-body"></tbody>
+    </table>
   </div>
+</div>
 
-  <!-- メモシート（最初はオープン状態） -->
-  <div id="sheet" class="sheet open">
-    <div id="sheet-handle" class="sheet-handle">
-      <div class="sheet-handle-bar"></div>
-    </div>
-    <div id="sheet-title" class="sheet-title"></div>
-    <div id="exercise-list"></div>
-    <button id="add-exercise" class="add-exercise-btn">＋ 種目を追加</button>
+<div id="sheet" class="sheet">
+  <div class="sheet-handle" id="sheet-handle">
+    <div class="sheet-handle-bar"></div>
+  </div>
+  <div id="sheet-title" class="sheet-title"></div>
+
+  <div id="exercise-list" class="exercise-list"></div>
+
+  <button id="add-exercise" class="add-exercise-btn">＋ 種目を追加</button>
+
+  <div class="note-row">
     <textarea id="note" placeholder="その他メモ（任意）"></textarea>
   </div>
 </div>
 
 <script>
-/* ====== ユーティリティ ====== */
-function pad2(n) {
-  return (n < 10 ? "0" : "") + n;
-}
+/* ------------------------------------------------------
+   基本データ
+------------------------------------------------------ */
+let current = new Date();
+const events = JSON.parse(localStorage.getItem("workout") || "{}");
 
-function dateKey(y,m,d){
-  return y + "-" + pad2(m+1) + "-" + pad2(d);
-}
+const monthLabel = document.getElementById("month-label");
+const monthSelect = document.getElementById("month-select");
+const body = document.getElementById("calendar-body");
+const sheet = document.getElementById("sheet");
+const sheetHandle = document.getElementById("sheet-handle");
+const note = document.getElementById("note");
+const sheetTitle = document.getElementById("sheet-title");
+const exerciseList = document.getElementById("exercise-list");
+const addExerciseBtn = document.getElementById("add-exercise");
+const calendarWrapper = document.getElementById("calendar-wrapper");
+const calendarTable = document.getElementById("calendar-table");
+const calendarContainer = document.getElementById("calendar-container");
 
-/* ====== 基本変数 ====== */
-var monthDate = new Date();
-var weekDate = new Date();
-var selectedDateKey = "";
-var viewMode = "month";
+let selectedDateKey = "";
+let noteDebounceTimer = null;
 
-var events = JSON.parse(localStorage.getItem("workout") || "{}");
+const repsMax = 20;
 
-var monthLabel = document.getElementById("month-label");
-var monthSelect = document.getElementById("month-select");
-var calBody = document.getElementById("calendar-body");
-var weekBody = document.getElementById("week-body");
-var weekLabel = document.getElementById("week-label");
-
-var sheet = document.getElementById("sheet");
-var sheetTitle = document.getElementById("sheet-title");
-var exerciseList = document.getElementById("exercise-list");
-var note = document.getElementById("note");
-
-var menuBtn = document.getElementById("menu-btn");
-var menuClose = document.getElementById("menu-close");
-var menuOverlay = document.getElementById("menu-overlay");
-var sideMenu = document.getElementById("side-menu");
-var menuMonth = document.getElementById("menu-month");
-var menuWeek = document.getElementById("menu-week");
-var sheetHandle = document.getElementById("sheet-handle");
-var monthView = document.getElementById("month-view");
-var calendarTable = document.getElementById("calendar-table");
-
-/* 種目カテゴリ */
-var exerciseCategories = [
+/* 部位＆色マップ */
+const exerciseCategories = [
   { label: "胸", color: "#e91e63", items: ["ベンチプレス","ダンベルプレス","インクラインスミスプレス","ペックフライ"] },
   { label: "背中", color: "#3f51b5", items: ["懸垂","ラットプルダウン","シーテッドロー","デッドリフト","フェイスプル"] },
   { label: "足", color: "#4caf50", items: ["スクワット","ルーマニアンデッドリフト","ブルガリアンスクワット","ヒップアダクション"] },
@@ -479,529 +373,432 @@ var exerciseCategories = [
   { label: "腕", color: "#9c27b0", items: ["インクラインダンベルカール","ケーブルプレスダウン","オーバーヘッドエクステンション"] }
 ];
 
-function normalizeEvent(raw){
-  if (!raw) return { exercises: [], note: "" };
-  return {
-    exercises: raw.exercises || [],
-    note: raw.note || ""
-  };
+function dateKey(y, m, d) {
+  return `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
 }
 
-function getBodyPart(exName){
-  for (var i=0; i<exerciseCategories.length; i++){
-    if (exerciseCategories[i].items.indexOf(exName) !== -1){
-      return exerciseCategories[i].label;
-    }
+function normalizeEvent(raw) {
+  if (!raw) return { exercises: [], note: "" };
+  if (typeof raw === "string") return { exercises: [], note: raw };
+
+  const exs = (raw.exercises || []).map(e => ({
+    exercise: e.exercise || "",
+    sets: (e.sets || []).map(s => ({
+      weight: s.weight || "",
+      reps: s.reps || ""
+    }))
+  }));
+
+  return { exercises: exs, note: raw.note || "" };
+}
+
+function getBodyPart(exName) {
+  for (const cat of exerciseCategories) {
+    if (cat.items.includes(exName)) return cat.label;
   }
   return null;
 }
-
-function getBodyPartColor(label){
-  for (var i=0; i<exerciseCategories.length; i++){
-    if (exerciseCategories[i].label === label){
-      return exerciseCategories[i].color;
-    }
-  }
-  return "#999";
+function getBodyPartColor(label) {
+  const cat = exerciseCategories.find(c => c.label === label);
+  return cat ? cat.color : "#999";
 }
 
-/* ====== メモシート開閉 ====== */
-function openSheet(key){
-  selectedDateKey = key;
-  var data = normalizeEvent(events[key]);
-
-  sheetTitle.textContent = key + " の筋トレ";
-  exerciseList.innerHTML = "";
-
-  if (data.exercises.length > 0){
-    data.exercises.forEach(function(ex){
-      exerciseList.appendChild(createExerciseBlock(ex));
-    });
-  } else {
-    exerciseList.appendChild(createExerciseBlock({ exercise: "", sets: [] }));
-  }
-
-  note.value = data.note || "";
-
-  sheet.classList.remove("closed");
-  sheet.classList.add("open");
-}
-
-function closeSheet(){
-  sheet.classList.remove("open");
-  sheet.classList.add("closed");
-}
-
-/* 日付クリックで必ず開く */
-function handleDateClick(key){
-  openSheet(key);
-}
-
-/* ====== カレンダー（月） ====== */
-function initMonthSelect(){
-  var baseYear = new Date().getFullYear();
-  var startYear = baseYear - 5;
-  var endYear = baseYear + 5;
-  monthSelect.innerHTML = "";
-  for (var y=startYear; y<=endYear; y++){
-    for (var m=0; m<12; m++){
-      var opt = document.createElement("option");
-      var v = y + "-" + pad2(m+1);
-      opt.value = v;
-      opt.textContent = y + "年 " + (m+1) + "月";
+/* ------------------------------------------------------
+   年月プルダウン初期化
+------------------------------------------------------ */
+(function initMonthSelect() {
+  const baseYear = new Date().getFullYear();
+  const startYear = baseYear - 5;
+  const endYear = baseYear + 5;
+  for (let y = startYear; y <= endYear; y++) {
+    for (let m = 0; m < 12; m++) {
+      const opt = document.createElement("option");
+      const value = `${y}-${String(m+1).padStart(2,"0")}`;
+      opt.value = value;
+      opt.textContent = `${y}年 ${m+1}月`;
       monthSelect.appendChild(opt);
     }
   }
-}
 
-function renderMonth(){
-  var y = monthDate.getFullYear();
-  var m = monthDate.getMonth();
+  monthSelect.addEventListener("change", () => {
+    const [yStr, mStr] = monthSelect.value.split("-");
+    const y = parseInt(yStr, 10);
+    const m = parseInt(mStr, 10) - 1;
+    current = new Date(y, m, 1);
+    render();
+  });
+})();
 
-  monthLabel.textContent = y + "年 " + (m+1) + "月";
-  var value = y + "-" + pad2(m+1);
-  monthSelect.value = value;
-
-  calBody.innerHTML = "";
-
-  var first = new Date(y,m,1);
-  var last  = new Date(y,m+1,0);
-  var row = document.createElement("tr");
-  var count = 0;
-
-  for (var i=0; i<first.getDay(); i++){
-    row.appendChild(document.createElement("td"));
-    count++;
+/* ------------------------------------------------------
+   レップ数セレクト
+------------------------------------------------------ */
+function fillRepsSelect(sel, selected) {
+  sel.innerHTML = "";
+  sel.innerHTML += `<option value="">レップ数</option>`;
+  for (let i = 1; i <= repsMax; i++) {
+    sel.innerHTML += `<option value="${i}" ${String(selected)===String(i)?"selected":""}>${i}回</option>`;
   }
-
-  var today = new Date();
-
-  for (var d=1; d<=last.getDate(); d++){
-    if (count === 7){
-      calBody.appendChild(row);
-      row = document.createElement("tr");
-      count = 0;
-    }
-
-    var td = document.createElement("td");
-    var num = document.createElement("div");
-    num.className = "day-number";
-    num.textContent = d;
-
-    if (today.getFullYear()===y && today.getMonth()===m && today.getDate()===d){
-      num.classList.add("today");
-    }
-    td.appendChild(num);
-
-    var key = dateKey(y,m,d);
-    var ev = events[key];
-    if (ev && ev.exercises && ev.exercises.length){
-      var preview = document.createElement("div");
-      preview.className = "record-preview";
-      ev.exercises.forEach(function(ex){
-        if (!ex.exercise) return;
-        var part = getBodyPart(ex.exercise);
-        var chip = document.createElement("span");
-        chip.className = "exercise-chip";
-        chip.textContent = ex.exercise;
-        chip.style.background = getBodyPartColor(part);
-        preview.appendChild(chip);
-      });
-      td.appendChild(preview);
-    }
-
-    td.addEventListener("click",(function(k){
-      return function(){ handleDateClick(k); };
-    })(key));
-
-    row.appendChild(td);
-    count++;
-  }
-  calBody.appendChild(row);
 }
 
-/* ====== 週表示 ====== */
-function getWeekStart(date){
-  var d = new Date(date);
-  d.setHours(0,0,0,0);
-  var day = d.getDay();
-  d.setDate(d.getDate() - day); // 日曜始まり
-  return d;
-}
+/* ------------------------------------------------------
+   種目セレクト
+------------------------------------------------------ */
+function createExerciseSelect(selected) {
+  const sel = document.createElement("select");
+  sel.className = "exercise-select";
 
-function renderWeek(){
-  var start = getWeekStart(weekDate);
-  var end = new Date(start);
-  end.setDate(start.getDate() + 6);
+  sel.innerHTML = `<option value="">種目を選択</option>`;
 
-  weekLabel.textContent =
-    start.getFullYear() + "/" + (start.getMonth()+1) + "/" + start.getDate() +
-    " 〜 " +
-    end.getFullYear() + "/" + (end.getMonth()+1) + "/" + end.getDate();
-
-  weekBody.innerHTML = "";
-  var tr = document.createElement("tr");
-
-  for (var i=0; i<7; i++){
-    var d = new Date(start);
-    d.setDate(start.getDate() + i);
-    var y = d.getFullYear();
-    var m = d.getMonth();
-    var day = d.getDate();
-
-    var td = document.createElement("td");
-    var num = document.createElement("div");
-    num.className = "day-number";
-    num.textContent = day;
-    td.appendChild(num);
-
-    var key = dateKey(y,m,day);
-    var ev = events[key];
-    if (ev && ev.exercises && ev.exercises.length){
-      var preview = document.createElement("div");
-      preview.className = "record-preview";
-      ev.exercises.forEach(function(ex){
-        if (!ex.exercise) return;
-        var part = getBodyPart(ex.exercise);
-        var chip = document.createElement("span");
-        chip.className = "exercise-chip";
-        chip.textContent = ex.exercise;
-        chip.style.background = getBodyPartColor(part);
-        preview.appendChild(chip);
-      });
-      td.appendChild(preview);
-    }
-
-    td.addEventListener("click",(function(k){
-      return function(){ handleDateClick(k); };
-    })(key));
-
-    tr.appendChild(td);
-  }
-  weekBody.appendChild(tr);
-}
-
-/* ====== 種目ブロック・セット ====== */
-function createExerciseBlock(data){
-  var exName = data.exercise || "";
-  var sets = (data.sets && data.sets.length) ? data.sets : [];
-
-  var block = document.createElement("div");
-  block.className = "exercise-block";
-
-  var header = document.createElement("div");
-  header.className = "exercise-header";
-
-  var left = document.createElement("div");
-  var title = document.createElement("span");
-  title.className = "exercise-title";
-  title.textContent = "種目";
-
-  var badge = document.createElement("span");
-  badge.className = "body-part-badge";
-  badge.style.display = "none";
-
-  left.appendChild(title);
-  left.appendChild(badge);
-
-  var remove = document.createElement("button");
-  remove.className = "remove-exercise";
-  remove.textContent = "削除";
-  remove.onclick = function(){
-    block.remove();
-    saveCurrentDay();
-  };
-
-  header.appendChild(left);
-  header.appendChild(remove);
-  block.appendChild(header);
-
-  var sel = document.createElement("select");
-  sel.innerHTML = '<option value="">種目を選択</option>';
-  exerciseCategories.forEach(function(cat){
-    var og = document.createElement("optgroup");
-    og.label = cat.label;
-    cat.items.forEach(function(item){
-      var opt = document.createElement("option");
+  exerciseCategories.forEach(cat => {
+    const grp = document.createElement("optgroup");
+    grp.label = cat.label;
+    cat.items.forEach(item => {
+      const opt = document.createElement("option");
       opt.value = item;
       opt.textContent = item;
-      if (item === exName) opt.selected = true;
-      og.appendChild(opt);
+      if (item === selected) opt.selected = true;
+      grp.appendChild(opt);
     });
-    sel.appendChild(og);
+    sel.appendChild(grp);
   });
 
-  sel.onchange = function(){
-    var part = getBodyPart(sel.value);
-    if (part){
-      badge.style.display = "inline-block";
-      badge.textContent = part;
-      badge.style.background = getBodyPartColor(part);
-    } else {
-      badge.style.display = "none";
-    }
-    saveCurrentDay();
-  };
-  block.appendChild(sel);
-
-  var setsContainer = document.createElement("div");
-  block.appendChild(setsContainer);
-
-  if (sets.length){
-    sets.forEach(function(s){
-      setsContainer.appendChild(createSetRow(setsContainer, s));
-    });
-  } else {
-    setsContainer.appendChild(createSetRow(setsContainer, {weight:"", reps:""}));
-  }
-
-  var addSetBtn = document.createElement("button");
-  addSetBtn.className = "add-set-btn";
-  addSetBtn.textContent = "＋ セット追加";
-  addSetBtn.onclick = function(){
-    setsContainer.appendChild(createSetRow(setsContainer, {weight:"", reps:""}));
-    saveCurrentDay();
-  };
-  block.appendChild(addSetBtn);
-
-  var part0 = getBodyPart(exName);
-  if (part0){
-    badge.style.display = "inline-block";
-    badge.textContent = part0;
-    badge.style.background = getBodyPartColor(part0);
-  }
-
-  return block;
+  return sel;
 }
 
-function createSetRow(container, data){
-  var wVal = data.weight || "";
-  var rVal = data.reps || "";
-
-  var row = document.createElement("div");
+/* ------------------------------------------------------
+   セット行（重量は数値入力・🗑削除）
+------------------------------------------------------ */
+function createSetRow(container, data) {
+  const row = document.createElement("div");
   row.className = "set-row";
 
-  var label = document.createElement("div");
+  const label = document.createElement("div");
   label.className = "set-label";
-  label.textContent = "セット " + (container.children.length + 1);
+  label.textContent = "セット";
   row.appendChild(label);
 
-  var fields = document.createElement("div");
+  const fields = document.createElement("div");
   fields.className = "set-fields";
 
-  var wInput = document.createElement("input");
-  wInput.type = "number";
-  wInput.placeholder = "重量(kg)";
-  wInput.value = wVal;
-  wInput.oninput = saveCurrentDayDebounced;
-  fields.appendChild(wInput);
+  const weightInput = document.createElement("input");
+  weightInput.type = "number";
+  weightInput.inputMode = "decimal";
+  weightInput.className = "weight-input";
+  weightInput.placeholder = "重量(kg)";
+  weightInput.value = data.weight || "";
 
-  var rSelect = document.createElement("select");
-  rSelect.innerHTML = '<option value="">回数</option>';
-  for (var i=1; i<=20; i++){
-    var opt = document.createElement("option");
-    opt.value = String(i);
-    opt.textContent = i + "回";
-    if (String(i) === String(rVal)) opt.selected = true;
-    rSelect.appendChild(opt);
-  }
-  rSelect.onchange = saveCurrentDay;
-  fields.appendChild(rSelect);
+  const repsSel = document.createElement("select");
+  repsSel.className = "reps-select";
+  fillRepsSelect(repsSel, data.reps);
 
+  fields.appendChild(weightInput);
+  fields.appendChild(repsSel);
   row.appendChild(fields);
 
-  var del = document.createElement("button");
+  const del = document.createElement("button");
   del.className = "delete-set-btn";
-  del.textContent = "🗑";
-  del.onclick = function(){
+  del.innerHTML = "🗑";
+  del.addEventListener("click", () => {
     row.remove();
+    renumberSets(container);
+
+    if (container.children.length === 0) {
+      container.appendChild(createSetRow(container, {weight:"", reps:""}));
+      renumberSets(container);
+    }
+
     saveCurrentDay();
-  };
+  });
   row.appendChild(del);
 
   return row;
 }
 
-/* ====== 保存 ====== */
-var saveTimer = null;
-function saveCurrentDay(){
+function renumberSets(container) {
+  const rows = container.querySelectorAll(".set-row");
+  rows.forEach((row, i) => {
+    row.querySelector(".set-label").textContent = `セット ${i+1}`;
+  });
+}
+
+/* ------------------------------------------------------
+   種目ブロック（部位バッジ付き）
+------------------------------------------------------ */
+function updateExerciseBlockBodyPart(block) {
+  const select = block.querySelector(".exercise-select");
+  const badge = block.querySelector(".body-part-badge");
+  if (!select || !badge) return;
+  const name = select.value;
+  const part = getBodyPart(name);
+  if (part) {
+    badge.textContent = part;
+    badge.style.backgroundColor = getBodyPartColor(part);
+    badge.style.display = "inline-block";
+  } else {
+    badge.textContent = "";
+    badge.style.display = "none";
+  }
+}
+
+function createExerciseBlock(data) {
+  const block = document.createElement("div");
+  block.className = "exercise-block";
+
+  const header = document.createElement("div");
+  header.className = "exercise-header";
+
+  const leftHeader = document.createElement("div");
+
+  const title = document.createElement("span");
+  title.className = "exercise-title";
+  title.textContent = "種目";
+
+  const badge = document.createElement("span");
+  badge.className = "body-part-badge";
+  badge.style.display = "none";
+
+  leftHeader.appendChild(title);
+  leftHeader.appendChild(badge);
+
+  const del = document.createElement("button");
+  del.className = "remove-exercise";
+  del.textContent = "削除";
+  del.addEventListener("click", () => {
+    block.remove();
+    saveCurrentDay();
+  });
+
+  header.appendChild(leftHeader);
+  header.appendChild(del);
+  block.appendChild(header);
+
+  const wrap = document.createElement("div");
+  wrap.className = "exercise-select-wrapper";
+  const exSel = createExerciseSelect(data.exercise);
+  wrap.appendChild(exSel);
+  block.appendChild(wrap);
+
+  const sets = document.createElement("div");
+  sets.className = "sets-container";
+  block.appendChild(sets);
+
+  if (data.sets?.length) {
+    data.sets.forEach(s => sets.appendChild(createSetRow(sets, s)));
+  } else {
+    sets.appendChild(createSetRow(sets, {weight:"", reps:""}));
+  }
+  renumberSets(sets);
+
+  updateExerciseBlockBodyPart(block);
+
+  const addSetBtn = document.createElement("button");
+  addSetBtn.className = "add-set-btn";
+  addSetBtn.textContent = "＋ セット追加";
+  addSetBtn.addEventListener("click", () => {
+    sets.appendChild(createSetRow(sets, {weight:"", reps:""}));
+    renumberSets(sets);
+    saveCurrentDay();
+  });
+  block.appendChild(addSetBtn);
+
+  return block;
+}
+
+/* ------------------------------------------------------
+   オートセーブ
+------------------------------------------------------ */
+function saveCurrentDay() {
   if (!selectedDateKey) return;
 
-  var blocks = exerciseList.children;
-  var exercises = [];
+  const blocks = [...document.querySelectorAll(".exercise-block")];
+  const exercises = [];
 
-  for (var i=0; i<blocks.length; i++){
-    var block = blocks[i];
-    var sel = block.querySelector("select");
-    var setRows = block.querySelectorAll(".set-row");
-    var sets = [];
-    for (var j=0; j<setRows.length; j++){
-      var sRow = setRows[j];
-      var inputs = sRow.querySelectorAll("input,select");
-      var w = inputs[0].value;
-      var r = inputs[1].value;
-      if (w || r){
-        sets.push({weight: w, reps: r});
-      }
-    }
-    if (sel.value || sets.length){
-      exercises.push({exercise: sel.value, sets: sets});
-    }
+  blocks.forEach(b => {
+    const ex = b.querySelector(".exercise-select").value;
+
+    const setRows = b.querySelectorAll(".set-row");
+    const sets = [...setRows].map(row => ({
+      weight: row.querySelector(".weight-input").value,
+      reps: row.querySelector(".reps-select").value
+    })).filter(s => s.weight || s.reps);
+
+    if (ex || sets.length > 0) exercises.push({ exercise: ex, sets });
+  });
+
+  const noteText = note.value.trim();
+
+  if (exercises.length > 0 || noteText) {
+    events[selectedDateKey] = { exercises, note: noteText };
+  } else {
+    delete events[selectedDateKey];
   }
 
-  events[selectedDateKey] = {
-    exercises: exercises,
-    note: note.value.trim()
-  };
-
   localStorage.setItem("workout", JSON.stringify(events));
+  render();
 }
 
-function saveCurrentDayDebounced(){
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(saveCurrentDay, 300);
+function saveCurrentDayDebounced() {
+  clearTimeout(noteDebounceTimer);
+  noteDebounceTimer = setTimeout(saveCurrentDay, 500);
 }
 
-/* ====== メニュー開閉 ====== */
-function openMenu(){
-  sideMenu.classList.add("open");
-  menuOverlay.classList.add("open");
+/* ------------------------------------------------------
+   日付クリック → メモシート開閉
+   同じ日をタップ → シートを「引っ込める」（ヘッダーだけ）
+------------------------------------------------------ */
+function handleDateClick(key) {
+  if (selectedDateKey === key && sheet.classList.contains("open")) {
+    // 同じ日付をもう一度 → 引っ込める（openを外すだけでヘッダー残る）
+    sheet.classList.remove("open");
+    return;
+  }
+
+  selectedDateKey = key;
+  openSheet(key);
 }
-function closeMenu(){
-  sideMenu.classList.remove("open");
-  menuOverlay.classList.remove("open");
+
+function openSheet(key) {
+  const data = normalizeEvent(events[key]);
+
+  sheetTitle.textContent = `${key} の筋トレ`;
+  exerciseList.innerHTML = "";
+
+  if (data.exercises.length) {
+    data.exercises.forEach(ex => exerciseList.appendChild(createExerciseBlock(ex)));
+  } else {
+    exerciseList.appendChild(createExerciseBlock({}));
+  }
+
+  note.value = data.note || "";
+
+  sheet.classList.add("open");
+  render();
 }
-menuBtn.onclick = openMenu;
-menuClose.onclick = closeMenu;
-menuOverlay.onclick = closeMenu;
 
-/* ====== 表示切り替え ====== */
-menuMonth.onclick = function(){
-  viewMode = "month";
-  document.getElementById("month-view").style.display = "block";
-  document.getElementById("week-view").style.display = "none";
-  menuMonth.classList.add("active");
-  menuWeek.classList.remove("active");
-  closeMenu();
-  renderMonth();
-};
-menuWeek.onclick = function(){
-  viewMode = "week";
-  document.getElementById("month-view").style.display = "none";
-  document.getElementById("week-view").style.display = "block";
-  menuWeek.classList.add("active");
-  menuMonth.classList.remove("active");
-  closeMenu();
-  renderWeek();
-};
-
-/* ====== 月移動／週移動 ====== */
-document.getElementById("prev").onclick = function(){
-  monthDate.setMonth(monthDate.getMonth()-1);
-  renderMonth();
-};
-document.getElementById("next").onclick = function(){
-  monthDate.setMonth(monthDate.getMonth()+1);
-  renderMonth();
-};
-
-document.getElementById("week-prev").onclick = function(){
-  weekDate.setDate(weekDate.getDate()-7);
-  renderWeek();
-};
-document.getElementById("week-next").onclick = function(){
-  weekDate.setDate(weekDate.getDate()+7);
-  renderWeek();
-};
-
-/* ====== シートのスワイプ（ハンドル） ====== */
-var startY = 0;
-var dragging = false;
-
-sheetHandle.addEventListener("touchstart", function(e){
-  if (e.touches.length !== 1) return;
-  dragging = true;
-  startY = e.touches[0].clientY;
+/* ------------------------------------------------------
+   入力監視（オートセーブ）
+------------------------------------------------------ */
+addExerciseBtn.addEventListener("click", () => {
+  exerciseList.appendChild(createExerciseBlock({}));
+  saveCurrentDay();
 });
 
-sheetHandle.addEventListener("touchend", function(e){
-  if (!dragging) return;
-  dragging = false;
-  var endY = e.changedTouches[0].clientY;
-  var dy = endY - startY;
-  var threshold = 40;
+sheet.addEventListener("change", e => {
+  if (e.target.matches("select")) {
+    if (e.target.matches(".exercise-select")) {
+      const block = e.target.closest(".exercise-block");
+      if (block) updateExerciseBlockBodyPart(block);
+    }
+    saveCurrentDay();
+  }
+});
 
-  if (dy > threshold && sheet.classList.contains("open")){
-    closeSheet();
-  } else if (dy < -threshold && sheet.classList.contains("closed")){
-    sheet.classList.remove("closed");
+sheet.addEventListener("input", e => {
+  if (e.target.matches(".weight-input")) {
+    saveCurrentDayDebounced();
+  }
+});
+
+note.addEventListener("input", () => saveCurrentDayDebounced());
+
+/* ------------------------------------------------------
+   メモシートのヘッダー上下スワイプ
+   下スワイプ → 引っ込める（open外す）
+   上スワイプ → open付与
+------------------------------------------------------ */
+let sheetStartY = 0;
+let sheetDragging = false;
+
+sheetHandle.addEventListener("touchstart", (e) => {
+  if (e.touches.length !== 1) return;
+  sheetStartY = e.touches[0].clientY;
+  sheetDragging = true;
+});
+
+sheetHandle.addEventListener("touchmove", (e) => {
+  if (!sheetDragging) return;
+  // 今回は判定だけで、リアルタイム追従はしない
+});
+
+sheetHandle.addEventListener("touchend", (e) => {
+  if (!sheetDragging) return;
+  sheetDragging = false;
+  const endY = e.changedTouches[0].clientY;
+  const dy = endY - sheetStartY;
+  const threshold = 40;
+  if (dy > threshold && sheet.classList.contains("open")) {
+    // 下スワイプ → 引っ込める
+    sheet.classList.remove("open");
+  } else if (dy < -threshold && !sheet.classList.contains("open")) {
+    // 上スワイプ → 全開
     sheet.classList.add("open");
   }
 });
 
-/* ====== 月カレンダー 横スワイプ ====== */
-var swipeStartX = 0;
-var swipeStartY = 0;
-var isSwiping = false;
+/* ------------------------------------------------------
+   スワイプで月移動（カレンダー＋余白）
+   ※メモシートにはバインドしてない
+------------------------------------------------------ */
+let swipeStartX = 0;
+let swipeStartY = 0;
+let isSwiping = false;
 
-monthView.addEventListener("touchstart", function(e){
+calendarContainer.addEventListener("touchstart", (e) => {
   if (e.touches.length !== 1) return;
-  var t = e.touches[0];
+  const t = e.touches[0];
   swipeStartX = t.clientX;
   swipeStartY = t.clientY;
   isSwiping = true;
   calendarTable.style.transition = "none";
 });
 
-monthView.addEventListener("touchmove", function(e){
+calendarContainer.addEventListener("touchmove", (e) => {
   if (!isSwiping) return;
-  var t = e.touches[0];
-  var dx = t.clientX - swipeStartX;
-  var dy = t.clientY - swipeStartY;
+  const t = e.touches[0];
+  const dx = t.clientX - swipeStartX;
+  const dy = t.clientY - swipeStartY;
 
-  if (Math.abs(dy) > Math.abs(dx)) return; // 縦が大きいときは無視
+  if (Math.abs(dy) > Math.abs(dx)) return;
 
-  calendarTable.style.transform = "translateX(" + dx + "px)";
+  calendarTable.style.transform = `translateX(${dx}px)`;
 });
 
-monthView.addEventListener("touchend", function(e){
+calendarContainer.addEventListener("touchend", (e) => {
   if (!isSwiping) return;
   isSwiping = false;
 
-  var t = e.changedTouches[0];
-  var dx = t.clientX - swipeStartX;
-  var dy = t.clientY - swipeStartY;
+  const t = e.changedTouches[0];
+  const dx = t.clientX - swipeStartX;
+  const dy = t.clientY - swipeStartY;
 
   calendarTable.style.transition = "transform 0.2s ease";
 
-  var threshold = 60;
+  const threshold = 60;
 
   if (Math.abs(dx) > threshold && Math.abs(dx) > Math.abs(dy)) {
     if (dx < 0) {
-      // 左スワイプ → 次の月
       calendarTable.style.transform = "translateX(-100%)";
-      setTimeout(function(){
-        monthDate.setMonth(monthDate.getMonth() + 1);
-        renderMonth();
+      setTimeout(() => {
+        current.setMonth(current.getMonth() + 1);
+        render();
         calendarTable.style.transition = "none";
         calendarTable.style.transform = "translateX(100%)";
-        setTimeout(function(){
+        requestAnimationFrame(() => {
           calendarTable.style.transition = "transform 0.2s ease";
           calendarTable.style.transform = "translateX(0)";
-        }, 0);
+        });
       }, 200);
     } else {
-      // 右スワイプ → 前の月
       calendarTable.style.transform = "translateX(100%)";
-      setTimeout(function(){
-        monthDate.setMonth(monthDate.getMonth() - 1);
-        renderMonth();
+      setTimeout(() => {
+        current.setMonth(current.getMonth() - 1);
+        render();
         calendarTable.style.transition = "none";
         calendarTable.style.transform = "translateX(-100%)";
-        setTimeout(function(){
+        requestAnimationFrame(() => {
           calendarTable.style.transition = "transform 0.2s ease";
           calendarTable.style.transform = "translateX(0)";
-        }, 0);
+        });
       }, 200);
     }
   } else {
@@ -1009,26 +806,109 @@ monthView.addEventListener("touchend", function(e){
   }
 });
 
-/* ====== その他 ====== */
-document.getElementById("add-exercise").onclick = function(){
-  exerciseList.appendChild(createExerciseBlock({exercise:"",sets:[]}));
-  saveCurrentDay();
+/* ------------------------------------------------------
+   カレンダー描画（種目名だけ色付きバッジ表示）
+------------------------------------------------------ */
+function updateMonthUI() {
+  const y = current.getFullYear();
+  const m = current.getMonth();
+  monthLabel.textContent = `${y}年 ${m+1}月`;
+  const value = `${y}-${String(m+1).padStart(2,"0")}`;
+  if ([...monthSelect.options].some(o => o.value === value)) {
+    monthSelect.value = value;
+  }
+}
+
+function fillPreview(container, raw) {
+  container.innerHTML = "";
+  const data = normalizeEvent(raw);
+  if (!data.exercises.length) return;
+
+  data.exercises.forEach(ex => {
+    if (!ex.exercise) return;
+    const part = getBodyPart(ex.exercise);
+    const chip = document.createElement("span");
+    chip.className = "exercise-chip";
+    chip.textContent = ex.exercise;
+    chip.style.backgroundColor = part ? getBodyPartColor(part) : "#999";
+    container.appendChild(chip);
+  });
+}
+
+function render() {
+  const y = current.getFullYear();
+  const m = current.getMonth();
+
+  updateMonthUI();
+  body.innerHTML = "";
+
+  const first = new Date(y, m, 1);
+  const last = new Date(y, m+1, 0);
+
+  let row = document.createElement("tr");
+  let count = 0;
+
+  for (let i = 0; i < first.getDay(); i++) {
+    row.appendChild(document.createElement("td"));
+    count++;
+  }
+
+  const today = new Date();
+  const isThisMonth = today.getFullYear()===y && today.getMonth()===m;
+
+  for (let d = 1; d <= last.getDate(); d++) {
+    if (count === 7) {
+      body.appendChild(row);
+      row = document.createElement("tr");
+      count = 0;
+    }
+
+    const cell = document.createElement("td");
+
+    const num = document.createElement("div");
+    num.className = "day-number";
+    num.textContent = d;
+
+    const weekday = (first.getDay() + (d-1)) % 7;
+    if (weekday===0) num.style.color = "red";
+    if (weekday===6) num.style.color = "blue";
+
+    if (isThisMonth && today.getDate()===d) {
+      num.classList.add("today");
+    }
+    cell.appendChild(num);
+
+    const key = dateKey(y,m,d);
+    if (key===selectedDateKey) cell.classList.add("selected-day");
+
+    if (events[key]) {
+      const preview = document.createElement("div");
+      preview.className = "record-preview";
+      fillPreview(preview, events[key]); // 種目名だけ
+      cell.appendChild(preview);
+    }
+
+    cell.addEventListener("click", () => handleDateClick(key));
+
+    row.appendChild(cell);
+    count++;
+  }
+
+  body.appendChild(row);
+}
+
+/* 月移動ボタン */
+document.getElementById("prev").onclick = () => {
+  current.setMonth(current.getMonth()-1);
+  render();
+};
+document.getElementById("next").onclick = () => {
+  current.setMonth(current.getMonth()+1);
+  render();
 };
 
-note.addEventListener("input", saveCurrentDayDebounced);
-
-monthSelect.addEventListener("change", function(){
-  var parts = monthSelect.value.split("-");
-  var y = parseInt(parts[0],10);
-  var m = parseInt(parts[1],10)-1;
-  monthDate = new Date(y,m,1);
-  renderMonth();
-});
-
-/* ====== 初期描画 ====== */
-initMonthSelect();
-renderMonth();
-renderWeek();
+render();
 </script>
+
 </body>
 </html>
