@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>筋トレカレンダー</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <style>
     :root {
       --sheet-handle-visible: 28px;
@@ -526,14 +526,31 @@ function createSetRow(container, data) {
 }
 
 function renumberSets(container) {
-  [...container.querySelectorAll(".set-label")].forEach((lab, idx) => {
-    lab.textContent = `セット${idx+1}`;
+  const rows = container.querySelectorAll(".set-row");
+  rows.forEach((row, i) => {
+    row.querySelector(".set-label").textContent = `セット ${i+1}`;
   });
 }
 
 /* ------------------------------------------------------
-   種目ブロック
+   種目ブロック（部位バッジ付き）
 ------------------------------------------------------ */
+function updateExerciseBlockBodyPart(block) {
+  const select = block.querySelector(".exercise-select");
+  const badge = block.querySelector(".body-part-badge");
+  if (!select || !badge) return;
+  const name = select.value;
+  const part = getBodyPart(name);
+  if (part) {
+    badge.textContent = part;
+    badge.style.backgroundColor = getBodyPartColor(part);
+    badge.style.display = "inline-block";
+  } else {
+    badge.textContent = "";
+    badge.style.display = "none";
+  }
+}
+
 function createExerciseBlock(data) {
   const block = document.createElement("div");
   block.className = "exercise-block";
@@ -541,16 +558,20 @@ function createExerciseBlock(data) {
   const header = document.createElement("div");
   header.className = "exercise-header";
 
+  const leftHeader = document.createElement("div");
+
   const title = document.createElement("div");
   title.className = "exercise-title";
   title.textContent = data.exercise || "種目";
-  header.appendChild(title);
+  leftHeader.appendChild(title);
 
   const badge = document.createElement("span");
   badge.className = "body-part-badge";
   badge.style.backgroundColor = "#999";
   badge.textContent = data.exercise ? (getBodyPart(data.exercise) || "部位") : "部位";
-  header.appendChild(badge);
+  leftHeader.appendChild(badge);
+
+  header.appendChild(leftHeader);
 
   const removeBtn = document.createElement("button");
   removeBtn.className = "remove-exercise";
@@ -563,17 +584,16 @@ function createExerciseBlock(data) {
 
   block.appendChild(header);
 
+  const selWrap = document.createElement("div");
+  selWrap.className = "exercise-select-wrapper";
   const sel = createExerciseSelect(data.exercise);
-  sel.classList.add("exercise-select");
+  selWrap.appendChild(sel);
+  block.appendChild(selWrap);
+
   sel.addEventListener("change", () => {
     updateExerciseBlockBodyPart(block);
     saveCurrentDay();
   });
-
-  const selWrap = document.createElement("div");
-  selWrap.className = "exercise-select-wrapper";
-  selWrap.appendChild(sel);
-  block.appendChild(selWrap);
 
   const setsContainer = document.createElement("div");
   setsContainer.className = "sets-container";
@@ -599,17 +619,6 @@ function createExerciseBlock(data) {
   updateExerciseBlockBodyPart(block);
 
   return block;
-}
-
-function updateExerciseBlockBodyPart(block) {
-  const sel = block.querySelector(".exercise-select");
-  const badge = block.querySelector(".body-part-badge");
-  const title = block.querySelector(".exercise-title");
-  const exName = sel.value;
-  const part = getBodyPart(exName);
-  badge.textContent = part || "部位";
-  badge.style.backgroundColor = getBodyPartColor(part);
-  title.textContent = exName || "種目";
 }
 
 /* ------------------------------------------------------
