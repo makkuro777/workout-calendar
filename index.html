@@ -24,7 +24,7 @@
     .container {
       width: 380px;
       max-width: 100%;
-      margin-top: 20px;
+      margin-top: 64px;
       padding: 0 8px 80px;
       box-sizing: border-box;
       touch-action: pan-x;
@@ -32,7 +32,7 @@
 
     .menu-button {
       position: fixed;
-      top: 10px;
+      top: 8px;
       left: 10px;
       width: 38px;
       height: 32px;
@@ -206,6 +206,10 @@
       gap: 4px;
       font-size: 11px;
       justify-content: flex-end;
+    }
+
+    .week-list-animating {
+      pointer-events: none;
     }
 
     table {
@@ -537,6 +541,7 @@ const modeMonthBtn = document.getElementById("mode-month");
 const modeWeekBtn = document.getElementById("mode-week");
 
 let viewMode = "month";
+let isWeekAnimating = false;
 
 let selectedDateKey = "";
 let noteDebounceTimer = null;
@@ -549,7 +554,7 @@ const exerciseCategories = [
   { label: "背中", color: "#3f51b5", items: ["懸垂","ラットプルダウン","シーテッドロー","デッドリフト","フェイスプル"] },
   { label: "足", color: "#4caf50", items: ["スクワット","ルーマニアンデッドリフト","ブルガリアンスクワット","ヒップアダクション"] },
   { label: "肩", color: "#ff9800", items: ["ショルダープレス","リアデルト","サイドレイズ"] },
-  { label: "腕", color: "#9c27b0", items: ["インクラインダンベルカール","ケーブルプレスダウン","オーバーヘッドエクステンション"] }
+  { label: "腕", color: "#9c27b0", items: ["インクラインダンベルカール","ケブルプレスダウン","オーバーヘッドエクステンション"] }
 ];
 
 function startOfWeek(date) {
@@ -770,11 +775,6 @@ function createExerciseBlock(data) {
   const exSel = createExerciseSelect(data.exercise);
   wrap.appendChild(exSel);
   block.appendChild(wrap);
-
-  exSel.addEventListener("change", () => {
-    updateExerciseBlockBodyPart(block);
-    saveCurrentDay();
-  });
 
   const sets = document.createElement("div");
   sets.className = "sets-container";
@@ -1339,7 +1339,6 @@ function renderWeekView() {
 }
 
 function render() {
-  updateMonthUI();
   calendarWrapper.style.display = viewMode === "month" ? "block" : "none";
   weekView.style.display = viewMode === "week" ? "block" : "none";
   weekView.setAttribute("aria-hidden", viewMode === "week" ? "false" : "true");
@@ -1348,6 +1347,7 @@ function render() {
   } else {
     renderWeekView();
   }
+  updateMonthUI();
   updateDrawerButtons();
 }
 
@@ -1368,6 +1368,85 @@ document.getElementById("next").onclick = () => {
   }
   render();
 };
+
+/* ------------------------------------------------------
+   週ビュー スクロール切替（上スクロール→次週 / 下スクロール→前週）
+------------------------------------------------------ */
+function animateWeekChange(direction) {
+  if (isWeekAnimating) return;
+  isWeekAnimating = true;
+  weekList.classList.add("week-list-animating");
+
+  const outOffset = direction === 1 ? -50 : 50;
+  weekList.style.transition = "transform 0.18s ease, opacity 0.18s ease";
+  weekList.style.transform = `translateY(${outOffset}px)`;
+  weekList.style.opacity = "0";
+
+  setTimeout(() => {
+    if (direction === 1) {
+      currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+    } else {
+      currentWeekStart.setDate(currentWeekStart.getDate() - 7);
+    }
+    renderWeekView();
+    updateMonthUI();
+
+    weekList.style.transition = "none";
+    weekList.style.transform = `translateY(${direction === 1 ? 50 : -50}px)`;
+    weekList.style.opacity = "0";
+
+    requestAnimationFrame(() => {
+      weekList.style.transition = "transform 0.18s ease, opacity 0.18s ease";
+      weekList.style.transform = "translateY(0)";
+      weekList.style.opacity = "1";
+      setTimeout(() => {
+        weekList.style.transition = "";
+        weekList.style.transform = "";
+        weekList.style.opacity = "";
+        weekList.classList.remove("week-list-animating");
+        isWeekAnimating = false;
+      }, 200);
+    });
+  }, 180);
+}
+
+weekView.addEventListener("wheel", (e) => {
+  if (viewMode !== "week") return;
+  if (Math.abs(e.deltaY) < 10) return;
+  e.preventDefault();
+  const direction = e.deltaY < 0 ? 1 : -1; // 上スクロールで次週
+  animateWeekChange(direction);
+}, { passive: false });
+
+let weekTouchStartY = 0;
+let weekTouchStartX = 0;
+let weekTouchActive = false;
+const weekSwipeThreshold = 40;
+
+weekView.addEventListener("touchstart", (e) => {
+  if (viewMode !== "week") return;
+  if (e.touches.length !== 1) return;
+  const t = e.touches[0];
+  weekTouchStartY = t.clientY;
+  weekTouchStartX = t.clientX;
+  weekTouchActive = true;
+});
+
+weekView.addEventListener("touchmove", (e) => {
+  if (!weekTouchActive || viewMode !== "week") return;
+  const t = e.touches[0];
+  const dy = t.clientY - weekTouchStartY;
+  const dx = t.clientX - weekTouchStartX;
+  if (Math.abs(dy) < Math.abs(dx)) return;
+  if (Math.abs(dy) > weekSwipeThreshold) {
+    animateWeekChange(dy < 0 ? 1 : -1);
+    weekTouchActive = false;
+  }
+});
+
+weekView.addEventListener("touchend", () => {
+  weekTouchActive = false;
+});
 
 render();
 </script>
