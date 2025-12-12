@@ -199,6 +199,20 @@
       text-align: center;
     }
 
+    .week-date-num {
+      min-width: 42px;
+      text-align: center;
+      border-radius: 999px;
+      padding: 4px 6px;
+      box-sizing: border-box;
+    }
+
+    .week-date-num.today {
+      background: #1976d2;
+      color: #fff;
+      font-weight: 700;
+    }
+
     .week-preview {
       flex: 1;
       display: flex;
@@ -1235,6 +1249,10 @@ function fillPreview(container, raw) {
   });
 }
 
+function isSameDate(a, b) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
 function renderMonthView() {
   const y = current.getFullYear();
   const m = current.getMonth();
@@ -1301,6 +1319,7 @@ function renderWeekView() {
   const start = currentWeekStart || startOfWeek(new Date());
   const days = ["日","月","火","水","木","金","土"];
   const startDate = new Date(start);
+  const today = new Date();
 
   for (let i = 0; i < 7; i++) {
     const d = new Date(startDate);
@@ -1321,7 +1340,11 @@ function renderWeekView() {
     if (i === 6) dayName.style.color = "blue";
 
     const dateNum = document.createElement("div");
+    dateNum.className = "week-date-num";
     dateNum.textContent = `${d.getMonth()+1}/${d.getDate()}`;
+    if (isSameDate(d, today)) {
+      dateNum.classList.add("today");
+    }
 
     dateWrap.appendChild(dayName);
     dateWrap.appendChild(dateNum);
