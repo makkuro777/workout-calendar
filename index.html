@@ -24,7 +24,7 @@
     .container {
       width: 380px;
       max-width: 100%;
-      margin-top: 64px;
+      margin-top: 88px;
       padding: 0 8px 80px;
       box-sizing: border-box;
       touch-action: pan-x;
@@ -46,6 +46,23 @@
       gap: 5px;
       padding: 6px 8px;
       cursor: pointer;
+      z-index: 1300;
+    }
+
+    .today-button {
+      position: fixed;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 8px 14px;
+      border-radius: 14px;
+      border: 1px solid #1976d2;
+      background: #e3f2fd;
+      color: #1976d2;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
       z-index: 1300;
     }
 
@@ -478,6 +495,8 @@
   <span class="menu-line"></span>
   <span class="menu-line"></span>
 </button>
+
+<button id="today-btn" class="today-button" aria-label="今日に戻る">今日に戻る</button>
 
 <div id="drawer-backdrop" class="drawer-backdrop"></div>
 <div id="drawer" class="drawer" aria-label="表示切替">
