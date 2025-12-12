@@ -567,6 +567,7 @@ const calendarTable = document.getElementById("calendar-table");
 const calendarContainer = document.getElementById("calendar-container");
 const weekView = document.getElementById("week-view");
 const weekList = document.getElementById("week-list");
+const todayBtn = document.getElementById("today-btn");
 const menuBtn = document.getElementById("menu-btn");
 const drawer = document.getElementById("drawer");
 const drawerBackdrop = document.getElementById("drawer-backdrop");
@@ -596,6 +597,18 @@ function startOfWeek(date) {
   d.setHours(0,0,0,0);
   d.setDate(d.getDate() - diff);
   return d;
+}
+
+function isSameDay(a, b) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+function resetWeekAnimationState() {
+  isWeekAnimating = false;
+  weekList.classList.remove("week-list-animating");
+  weekList.style.transition = "";
+  weekList.style.transform = "";
+  weekList.style.opacity = "";
 }
 
 function parseDateKey(key) {
@@ -877,16 +890,6 @@ function saveCurrentDayDebounced() {
    日付クリック → メモシート開閉
    同じ日をタップ → シートを「引っ込める」（ヘッダーだけ）
 ------------------------------------------------------- */
-function handleDateClick(key) {
-  if (selectedDateKey === key && sheet.classList.contains("open")) {
-    closeSheet();
-    return;
-  }
-
-  selectedDateKey = key;
-  openSheetForDate(key, true);
-}
-
 function populateSheetForDate(key) {
   const data = normalizeEvent(events[key]);
 
@@ -902,19 +905,34 @@ function populateSheetForDate(key) {
   note.value = data.note || "";
 }
 
-function openSheetForDate(key, withAnimation) {
-  if (sheet.classList.contains("open") && withAnimation) {
+function handleDateClick(key) {
+  const wasOpen = sheet.classList.contains("open");
+
+  if (selectedDateKey === key && wasOpen) {
+    // 同じ日付をもう一度 → 引っ込める（openを外すだけでヘッダー残る）
     closeSheet();
-    setTimeout(() => {
-      populateSheetForDate(key);
-      openSheet();
-      render();
-    }, 220);
-  } else {
-    populateSheetForDate(key);
-    openSheet();
-    render();
+    return;
   }
+
+  selectedDateKey = key;
+  populateSheetForDate(key);
+
+  if (wasOpen) {
+    let reopened = false;
+    const reopen = () => {
+      if (reopened) return;
+      reopened = true;
+      sheet.removeEventListener("transitionend", reopen);
+      openSheet();
+    };
+    sheet.addEventListener("transitionend", reopen);
+    closeSheet();
+    setTimeout(reopen, 320); // 念のためのフォールバック
+  } else {
+    openSheet();
+  }
+
+  render();
 }
 
 /* ------------------------------------------------------
@@ -956,6 +974,7 @@ function openDrawer() {
   drawerBackdrop.classList.add("show");
   calendarContainer.classList.add("dimmed");
   sheet.classList.add("dimmed");
+  todayBtn.classList.add("dimmed");
 }
 
 function closeDrawer() {
@@ -963,6 +982,7 @@ function closeDrawer() {
   drawerBackdrop.classList.remove("show");
   calendarContainer.classList.remove("dimmed");
   sheet.classList.remove("dimmed");
+  todayBtn.classList.remove("dimmed");
 }
 
 function toggleDrawer() {
@@ -987,10 +1007,24 @@ function setViewMode(mode) {
   render();
 }
 
+function jumpToToday() {
+  const today = new Date();
+  const todayKey = dateKey(today.getFullYear(), today.getMonth(), today.getDate());
+  current = new Date(today);
+  currentWeekStart = startOfWeek(today);
+  selectedDateKey = todayKey;
+  // 途中の週移動アニメーション状態をリセット
+  resetWeekAnimationState();
+  closeDrawer();
+  closeSheet();
+  render();
+}
+
 menuBtn.addEventListener("click", toggleDrawer);
 drawerBackdrop.addEventListener("click", closeDrawer);
 modeMonthBtn.addEventListener("click", () => setViewMode("month"));
 modeWeekBtn.addEventListener("click", () => setViewMode("week"));
+todayBtn.addEventListener("click", jumpToToday);
 
 let drawerPointerId = null;
 let drawerStartX = 0;
