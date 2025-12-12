@@ -879,16 +879,15 @@ function saveCurrentDayDebounced() {
 ------------------------------------------------------- */
 function handleDateClick(key) {
   if (selectedDateKey === key && sheet.classList.contains("open")) {
-    // 同じ日付をもう一度 → 引っ込める（openを外すだけでヘッダー残る）
     closeSheet();
     return;
   }
 
   selectedDateKey = key;
-  openSheetForDate(key);
+  openSheetForDate(key, true);
 }
 
-function openSheetForDate(key) {
+function populateSheetForDate(key) {
   const data = normalizeEvent(events[key]);
 
   sheetTitle.textContent = `${key} の筋トレ`;
@@ -901,9 +900,21 @@ function openSheetForDate(key) {
   }
 
   note.value = data.note || "";
+}
 
-  openSheet();
-  render();
+function openSheetForDate(key, withAnimation) {
+  if (sheet.classList.contains("open") && withAnimation) {
+    closeSheet();
+    setTimeout(() => {
+      populateSheetForDate(key);
+      openSheet();
+      render();
+    }, 220);
+  } else {
+    populateSheetForDate(key);
+    openSheet();
+    render();
+  }
 }
 
 /* ------------------------------------------------------
@@ -1091,7 +1102,6 @@ sheet.addEventListener("pointermove", (e) => {
   if (!sheetDragging) {
     if (Math.abs(dy) < startDragThreshold || Math.abs(dy) < Math.abs(dx)) return;
 
-    // どこを触ってもドラッグ開始。開始時点のスクロール位置で固定する。
     sheetDragging = true;
     sheetStartTranslate = getCurrentTranslate();
     sheetStartY = e.clientY;
@@ -1452,6 +1462,14 @@ function animateWeekChange(direction) {
   }, 180);
 }
 
+function resetWeekAnimation() {
+  weekList.classList.remove("week-list-animating");
+  weekList.style.transition = "";
+  weekList.style.transform = "";
+  weekList.style.opacity = "";
+  isWeekAnimating = false;
+}
+
 weekView.addEventListener("wheel", (e) => {
   if (viewMode !== "week") return;
   if (Math.abs(e.deltaY) < 10) return;
@@ -1488,6 +1506,20 @@ weekView.addEventListener("touchmove", (e) => {
 
 weekView.addEventListener("touchend", () => {
   weekTouchActive = false;
+});
+
+/* ------------------------------------------------------
+   今日に戻るボタン
+------------------------------------------------------ */
+document.getElementById("today-btn").addEventListener("click", () => {
+  closeDrawer();
+  resetWeekAnimation();
+  const today = new Date();
+  current = new Date(today);
+  currentWeekStart = startOfWeek(today);
+  selectedDateKey = dateKey(today.getFullYear(), today.getMonth(), today.getDate());
+  render();
+  openSheetForDate(selectedDateKey, false);
 });
 
 render();
