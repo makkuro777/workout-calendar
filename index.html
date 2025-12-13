@@ -48,6 +48,7 @@
       cursor: pointer;
       z-index: 1700;
       transition: transform 0.24s ease;
+      will-change: transform;
     }
 
     .menu-button.shifted {
@@ -323,23 +324,30 @@
       transition: transform 0.25s ease;
       box-sizing: border-box;
       max-height: 75vh;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
       overflow: hidden;
       transform: translateY(var(--sheet-closed-offset));
       touch-action: pan-y;
-      display: flex;
-      flex-direction: column;
     }
     .sheet.open {
       transform: translateY(0);
     }
 
+    .sheet-drag-zone {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      touch-action: pan-y;
+      cursor: grab;
+      padding-bottom: 4px;
+    }
     .sheet-handle {
       width: 100%;
       display: flex;
       justify-content: center;
-      margin-bottom: 8px;
-      touch-action: pan-y;
-      cursor: grab;
     }
     .sheet-handle-bar {
       width: 40px;
@@ -350,7 +358,6 @@
 
     .sheet-title {
       font-weight: bold;
-      margin-bottom: 10px;
       font-size: 14px;
     }
 
@@ -358,8 +365,10 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
+      flex: 1;
+      min-height: 0;
       overflow-y: auto;
-      padding-bottom: 12px;
+      padding-right: 4px;
     }
 
     .exercise-block {
@@ -367,30 +376,26 @@
       border-radius: 8px;
       padding: 8px;
       background: #fafafa;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
     }
 
     .exercise-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 6px;
+      margin-bottom: 6px;
+      gap: 4px;
     }
 
-    .exercise-left {
+    .exercise-header-left {
       display: flex;
       align-items: center;
       gap: 6px;
-      min-width: 0;
       flex: 1;
     }
 
     .exercise-title {
       font-size: 13px;
       font-weight: 600;
-      white-space: nowrap;
     }
 
     .body-part-badge {
@@ -400,7 +405,6 @@
       font-size: 10px;
       color: #fff;
       margin-left: 4px;
-      white-space: nowrap;
     }
 
     .remove-exercise {
@@ -411,13 +415,29 @@
       cursor: pointer;
     }
 
-    .collapse-toggle {
-      border: none;
-      background: none;
+    .sets-toggle {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 4px;
+      gap: 6px;
+    }
+
+    .collapse-sets-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid #ccc;
+      background: #fff;
+      border-radius: 10px;
+      padding: 8px 12px;
       cursor: pointer;
-      font-size: 14px;
+      font-size: 16px;
+      line-height: 1.1;
+    }
+
+    .collapse-sets-btn .collapse-icon {
+      font-size: 18px;
       line-height: 1;
-      padding: 2px 6px;
     }
 
     .exercise-select-wrapper select {
@@ -437,7 +457,8 @@
       margin-top: 4px;
     }
 
-    .sets-container.collapsed {
+    .sets-wrapper.collapsed .sets-container,
+    .sets-wrapper.collapsed .add-set-btn {
       display: none;
     }
 
@@ -566,10 +587,12 @@
 </div>
 
 <div id="sheet" class="sheet">
-  <div class="sheet-handle" id="sheet-handle">
-    <div class="sheet-handle-bar"></div>
+  <div class="sheet-drag-zone" id="sheet-drag-zone">
+    <div class="sheet-handle">
+      <div class="sheet-handle-bar"></div>
+    </div>
+    <div id="sheet-title" class="sheet-title"></div>
   </div>
-  <div id="sheet-title" class="sheet-title"></div>
 
   <div id="exercise-list" class="exercise-list"></div>
 
@@ -592,6 +615,7 @@ const monthLabel = document.getElementById("month-label");
 const monthSelect = document.getElementById("month-select");
 const body = document.getElementById("calendar-body");
 const sheet = document.getElementById("sheet");
+const sheetDragZone = document.getElementById("sheet-drag-zone");
 const sheetHandle = document.getElementById("sheet-handle");
 const note = document.getElementById("note");
 const sheetTitle = document.getElementById("sheet-title");
@@ -827,7 +851,7 @@ function createExerciseBlock(data) {
   header.className = "exercise-header";
 
   const leftHeader = document.createElement("div");
-  leftHeader.className = "exercise-left";
+  leftHeader.className = "exercise-header-left";
 
   const title = document.createElement("span");
   title.className = "exercise-title";
@@ -840,16 +864,7 @@ function createExerciseBlock(data) {
   leftHeader.appendChild(title);
   leftHeader.appendChild(badge);
 
-  const controls = document.createElement("div");
-  controls.style.display = "flex";
-  controls.style.alignItems = "center";
-  controls.style.gap = "6px";
-
-  const collapseBtn = document.createElement("button");
-  collapseBtn.className = "collapse-toggle";
-  collapseBtn.textContent = "▼";
-  collapseBtn.title = "セットを畳む/展開";
-  controls.appendChild(collapseBtn);
+  header.appendChild(leftHeader);
 
   const del = document.createElement("button");
   del.className = "remove-exercise";
@@ -858,21 +873,31 @@ function createExerciseBlock(data) {
     block.remove();
     saveCurrentDay();
   });
-  controls.appendChild(del);
+  header.appendChild(del);
 
-  header.appendChild(leftHeader);
-  header.appendChild(controls);
   block.appendChild(header);
+
+  const setsWrapper = document.createElement("div");
+  setsWrapper.className = "sets-wrapper";
+
+  const setsToggle = document.createElement("div");
+  setsToggle.className = "sets-toggle";
+
+  const collapseBtn = document.createElement("button");
+  collapseBtn.className = "collapse-sets-btn";
+  collapseBtn.innerHTML = `<span class="collapse-icon">▼</span><span>セットを収納</span>`;
+  setsToggle.appendChild(collapseBtn);
+  setsWrapper.appendChild(setsToggle);
 
   const wrap = document.createElement("div");
   wrap.className = "exercise-select-wrapper";
   const exSel = createExerciseSelect(data.exercise);
   wrap.appendChild(exSel);
-  block.appendChild(wrap);
+  setsWrapper.appendChild(wrap);
 
   const sets = document.createElement("div");
   sets.className = "sets-container";
-  block.appendChild(sets);
+  setsWrapper.appendChild(sets);
 
   if (data.sets?.length) {
     data.sets.forEach(s => sets.appendChild(createSetRow(sets, s)));
@@ -891,15 +916,21 @@ function createExerciseBlock(data) {
     renumberSets(sets);
     saveCurrentDay();
   });
-  block.appendChild(addSetBtn);
+  setsWrapper.appendChild(addSetBtn);
 
-  let collapsed = false;
-  const updateCollapse = () => {
-    collapsed = !collapsed;
-    sets.classList.toggle("collapsed", collapsed);
-    collapseBtn.textContent = collapsed ? "▲" : "▼";
+  block.appendChild(setsWrapper);
+
+  const toggleSets = () => {
+    const collapsed = setsWrapper.classList.toggle("collapsed");
+    collapseBtn.querySelector(".collapse-icon").textContent = collapsed ? "▲" : "▼";
+    collapseBtn.querySelector("span:nth-child(2)").textContent = collapsed ? "セットを展開" : "セットを収納";
   };
-  collapseBtn.addEventListener("click", updateCollapse);
+  collapseBtn.addEventListener("click", toggleSets);
+
+  exSel.addEventListener("change", () => {
+    updateExerciseBlockBodyPart(block);
+    saveCurrentDay();
+  });
 
   return block;
 }
@@ -1127,7 +1158,7 @@ drawerBackdrop.addEventListener("pointercancel", handleDrawerPointerEnd);
 
 /* ------------------------------------------------------
    メモシートのドラッグ＆スクロール連動
-   ハンドルのみで下方向ドラッグで閉じられる
+   ハンドル＋タイトル領域のみで下方向ドラッグできる
 ------------------------------------------------------ */
 let sheetStartY = 0;
 let sheetStartTranslate = 0;
@@ -1172,7 +1203,7 @@ function closeSheet() {
   setSheetTranslate(getClosedOffset());
 }
 
-sheetHandle.addEventListener("pointerdown", (e) => {
+sheetDragZone.addEventListener("pointerdown", (e) => {
   if (e.pointerType === "mouse" && e.buttons !== 1) return;
   sheetPointerId = e.pointerId;
   sheetStartY = e.clientY;
@@ -1180,10 +1211,10 @@ sheetHandle.addEventListener("pointerdown", (e) => {
   sheetStartTranslate = getCurrentTranslate();
   sheetDragging = false;
   sheet.style.transition = "none";
-  sheetHandle.setPointerCapture(sheetPointerId);
+  sheetDragZone.setPointerCapture(sheetPointerId);
 });
 
-sheetHandle.addEventListener("pointermove", (e) => {
+sheetDragZone.addEventListener("pointermove", (e) => {
   if (e.pointerId !== sheetPointerId) return;
   const dy = e.clientY - sheetStartY;
   const dx = e.clientX - sheetStartX;
@@ -1217,7 +1248,7 @@ function finishSheetDrag(dy) {
   }
 }
 
-sheetHandle.addEventListener("pointerup", (e) => {
+sheetDragZone.addEventListener("pointerup", (e) => {
   if (e.pointerId !== sheetPointerId) return;
   const dy = e.clientY - sheetStartY;
   if (sheetDragging) {
@@ -1227,10 +1258,10 @@ sheetHandle.addEventListener("pointerup", (e) => {
   sheetDragging = false;
   sheet.style.overflowY = "auto";
   sheet.style.touchAction = "pan-y";
-  sheetHandle.releasePointerCapture(e.pointerId);
+  sheetDragZone.releasePointerCapture(e.pointerId);
 });
 
-sheetHandle.addEventListener("pointercancel", (e) => {
+sheetDragZone.addEventListener("pointercancel", (e) => {
   if (e.pointerId !== sheetPointerId) return;
   sheetPointerId = null;
   sheetDragging = false;
@@ -1238,14 +1269,6 @@ sheetHandle.addEventListener("pointercancel", (e) => {
   sheet.style.touchAction = "pan-y";
   sheet.style.transition = "transform 0.25s ease";
   setSheetTranslate(sheet.classList.contains("open") ? 0 : getClosedOffset());
-});
-
-sheetHandle.addEventListener("click", () => {
-  if (sheet.classList.contains("open")) {
-    closeSheet();
-  } else {
-    openSheet();
-  }
 });
 
 window.addEventListener("resize", () => {
