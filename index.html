@@ -47,6 +47,11 @@
       padding: 6px 8px;
       cursor: pointer;
       z-index: 1700;
+      transition: transform 0.24s ease;
+    }
+
+    .menu-button.shifted {
+      transform: translateX(var(--drawer-width));
     }
 
     .today-button {
@@ -318,9 +323,11 @@
       transition: transform 0.25s ease;
       box-sizing: border-box;
       max-height: 75vh;
-      overflow-y: auto;
+      overflow: hidden;
       transform: translateY(var(--sheet-closed-offset));
       touch-action: pan-y;
+      display: flex;
+      flex-direction: column;
     }
     .sheet.open {
       transform: translateY(0);
@@ -332,6 +339,7 @@
       justify-content: center;
       margin-bottom: 8px;
       touch-action: pan-y;
+      cursor: grab;
     }
     .sheet-handle-bar {
       width: 40px;
@@ -350,6 +358,8 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
+      overflow-y: auto;
+      padding-bottom: 12px;
     }
 
     .exercise-block {
@@ -357,19 +367,30 @@
       border-radius: 8px;
       padding: 8px;
       background: #fafafa;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
     }
 
     .exercise-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 6px;
-      gap: 4px;
+      gap: 6px;
+    }
+
+    .exercise-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+      flex: 1;
     }
 
     .exercise-title {
       font-size: 13px;
       font-weight: 600;
+      white-space: nowrap;
     }
 
     .body-part-badge {
@@ -379,6 +400,7 @@
       font-size: 10px;
       color: #fff;
       margin-left: 4px;
+      white-space: nowrap;
     }
 
     .remove-exercise {
@@ -387,6 +409,15 @@
       background: transparent;
       color: #d32f2f;
       cursor: pointer;
+    }
+
+    .collapse-toggle {
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+      padding: 2px 6px;
     }
 
     .exercise-select-wrapper select {
@@ -404,6 +435,10 @@
       flex-direction: column;
       gap: 6px;
       margin-top: 4px;
+    }
+
+    .sets-container.collapsed {
+      display: none;
     }
 
     .set-row {
@@ -792,6 +827,7 @@ function createExerciseBlock(data) {
   header.className = "exercise-header";
 
   const leftHeader = document.createElement("div");
+  leftHeader.className = "exercise-left";
 
   const title = document.createElement("span");
   title.className = "exercise-title";
@@ -804,6 +840,17 @@ function createExerciseBlock(data) {
   leftHeader.appendChild(title);
   leftHeader.appendChild(badge);
 
+  const controls = document.createElement("div");
+  controls.style.display = "flex";
+  controls.style.alignItems = "center";
+  controls.style.gap = "6px";
+
+  const collapseBtn = document.createElement("button");
+  collapseBtn.className = "collapse-toggle";
+  collapseBtn.textContent = "▼";
+  collapseBtn.title = "セットを畳む/展開";
+  controls.appendChild(collapseBtn);
+
   const del = document.createElement("button");
   del.className = "remove-exercise";
   del.textContent = "削除";
@@ -811,9 +858,10 @@ function createExerciseBlock(data) {
     block.remove();
     saveCurrentDay();
   });
+  controls.appendChild(del);
 
   header.appendChild(leftHeader);
-  header.appendChild(del);
+  header.appendChild(controls);
   block.appendChild(header);
 
   const wrap = document.createElement("div");
@@ -844,6 +892,14 @@ function createExerciseBlock(data) {
     saveCurrentDay();
   });
   block.appendChild(addSetBtn);
+
+  let collapsed = false;
+  const updateCollapse = () => {
+    collapsed = !collapsed;
+    sets.classList.toggle("collapsed", collapsed);
+    collapseBtn.textContent = collapsed ? "▲" : "▼";
+  };
+  collapseBtn.addEventListener("click", updateCollapse);
 
   return block;
 }
@@ -909,7 +965,6 @@ function handleDateClick(key) {
   const wasOpen = sheet.classList.contains("open");
 
   if (selectedDateKey === key && wasOpen) {
-    // 同じ日付をもう一度 → 引っ込める（openを外すだけでヘッダー残る）
     closeSheet();
     return;
   }
@@ -975,6 +1030,7 @@ function openDrawer() {
   calendarContainer.classList.add("dimmed");
   sheet.classList.add("dimmed");
   todayBtn.classList.add("dimmed");
+  menuBtn.classList.add("shifted");
 }
 
 function closeDrawer() {
@@ -983,6 +1039,7 @@ function closeDrawer() {
   calendarContainer.classList.remove("dimmed");
   sheet.classList.remove("dimmed");
   todayBtn.classList.remove("dimmed");
+  menuBtn.classList.remove("shifted");
 }
 
 function toggleDrawer() {
@@ -1013,7 +1070,6 @@ function jumpToToday() {
   current = new Date(today);
   currentWeekStart = startOfWeek(today);
   selectedDateKey = todayKey;
-  // 途中の週移動アニメーション状態をリセット
   resetWeekAnimationState();
   closeDrawer();
   closeSheet();
@@ -1071,7 +1127,7 @@ drawerBackdrop.addEventListener("pointercancel", handleDrawerPointerEnd);
 
 /* ------------------------------------------------------
    メモシートのドラッグ＆スクロール連動
-   シート内のどこでも下方向ドラッグで閉じられる
+   ハンドルのみで下方向ドラッグで閉じられる
 ------------------------------------------------------ */
 let sheetStartY = 0;
 let sheetStartTranslate = 0;
@@ -1116,7 +1172,7 @@ function closeSheet() {
   setSheetTranslate(getClosedOffset());
 }
 
-sheet.addEventListener("pointerdown", (e) => {
+sheetHandle.addEventListener("pointerdown", (e) => {
   if (e.pointerType === "mouse" && e.buttons !== 1) return;
   sheetPointerId = e.pointerId;
   sheetStartY = e.clientY;
@@ -1124,10 +1180,10 @@ sheet.addEventListener("pointerdown", (e) => {
   sheetStartTranslate = getCurrentTranslate();
   sheetDragging = false;
   sheet.style.transition = "none";
-  sheet.setPointerCapture(sheetPointerId);
+  sheetHandle.setPointerCapture(sheetPointerId);
 });
 
-sheet.addEventListener("pointermove", (e) => {
+sheetHandle.addEventListener("pointermove", (e) => {
   if (e.pointerId !== sheetPointerId) return;
   const dy = e.clientY - sheetStartY;
   const dx = e.clientX - sheetStartX;
@@ -1136,7 +1192,6 @@ sheet.addEventListener("pointermove", (e) => {
   if (!sheetDragging) {
     if (Math.abs(dy) < startDragThreshold || Math.abs(dy) < Math.abs(dx)) return;
 
-    // どこを触ってもドラッグ開始。開始時点のスクロール位置で固定する。
     sheetDragging = true;
     sheetStartTranslate = getCurrentTranslate();
     sheetStartY = e.clientY;
@@ -1162,7 +1217,7 @@ function finishSheetDrag(dy) {
   }
 }
 
-sheet.addEventListener("pointerup", (e) => {
+sheetHandle.addEventListener("pointerup", (e) => {
   if (e.pointerId !== sheetPointerId) return;
   const dy = e.clientY - sheetStartY;
   if (sheetDragging) {
@@ -1172,10 +1227,10 @@ sheet.addEventListener("pointerup", (e) => {
   sheetDragging = false;
   sheet.style.overflowY = "auto";
   sheet.style.touchAction = "pan-y";
-  sheet.releasePointerCapture(e.pointerId);
+  sheetHandle.releasePointerCapture(e.pointerId);
 });
 
-sheet.addEventListener("pointercancel", (e) => {
+sheetHandle.addEventListener("pointercancel", (e) => {
   if (e.pointerId !== sheetPointerId) return;
   sheetPointerId = null;
   sheetDragging = false;
