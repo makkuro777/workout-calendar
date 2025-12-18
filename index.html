@@ -189,6 +189,7 @@
       border: 1px solid #eaeaea;
       border-radius: 10px;
       overflow: hidden;
+      height: 80vh;
     }
 
     .week-row {
@@ -418,25 +419,26 @@
     .sets-toggle {
       display: flex;
       justify-content: flex-end;
-      margin-top: 4px;
+      margin-top: 6px;
+      margin-bottom: 4px;
       gap: 6px;
     }
 
     .collapse-sets-btn {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       border: 1px solid #ccc;
       background: #fff;
       border-radius: 10px;
-      padding: 8px 12px;
+      padding: 6px 10px;
       cursor: pointer;
-      font-size: 16px;
+      font-size: 14px;
       line-height: 1.1;
     }
 
     .collapse-sets-btn .collapse-icon {
-      font-size: 18px;
+      font-size: 16px;
       line-height: 1;
     }
 
@@ -647,7 +649,7 @@ const exerciseCategories = [
   { label: "背中", color: "#3f51b5", items: ["懸垂","ラットプルダウン","シーテッドロー","デッドリフト","フェイスプル"] },
   { label: "足", color: "#4caf50", items: ["スクワット","ルーマニアンデッドリフト","ブルガリアンスクワット","ヒップアダクション"] },
   { label: "肩", color: "#ff9800", items: ["ショルダープレス","リアデルト","サイドレイズ"] },
-  { label: "腕", color: "#9c27b0", items: ["インクラインダンベルカール","ケブルプレスダウン","オーバーヘッドエクステンション"] }
+  { label: "腕", color: "#9c27b0", items: ["インクラインダンベルカール","ケーブルプレスダウン","オーバーヘッドエクステンション"] }
 ];
 
 function startOfWeek(date) {
@@ -880,6 +882,12 @@ function createExerciseBlock(data) {
   const setsWrapper = document.createElement("div");
   setsWrapper.className = "sets-wrapper";
 
+  const wrap = document.createElement("div");
+  wrap.className = "exercise-select-wrapper";
+  const exSel = createExerciseSelect(data.exercise);
+  wrap.appendChild(exSel);
+  setsWrapper.appendChild(wrap);
+
   const setsToggle = document.createElement("div");
   setsToggle.className = "sets-toggle";
 
@@ -887,13 +895,8 @@ function createExerciseBlock(data) {
   collapseBtn.className = "collapse-sets-btn";
   collapseBtn.innerHTML = `<span class="collapse-icon">▼</span><span>セットを収納</span>`;
   setsToggle.appendChild(collapseBtn);
-  setsWrapper.appendChild(setsToggle);
 
-  const wrap = document.createElement("div");
-  wrap.className = "exercise-select-wrapper";
-  const exSel = createExerciseSelect(data.exercise);
-  wrap.appendChild(exSel);
-  setsWrapper.appendChild(wrap);
+  setsWrapper.appendChild(setsToggle);
 
   const sets = document.createElement("div");
   sets.className = "sets-container";
@@ -1218,7 +1221,7 @@ sheetDragZone.addEventListener("pointermove", (e) => {
   if (e.pointerId !== sheetPointerId) return;
   const dy = e.clientY - sheetStartY;
   const dx = e.clientX - sheetStartX;
-  const startDragThreshold = 6;
+  const startDragThreshold = 4;
 
   if (!sheetDragging) {
     if (Math.abs(dy) < startDragThreshold || Math.abs(dy) < Math.abs(dx)) return;
@@ -1240,7 +1243,7 @@ function finishSheetDrag(dy) {
   const offset = getClosedOffset();
   const currentTranslate = getCurrentTranslate();
   sheet.style.transition = "transform 0.25s ease";
-  const threshold = offset * 0.3;
+  const threshold = offset * 0.2;
   if (dy > threshold || currentTranslate > threshold) {
     closeSheet();
   } else {
@@ -1269,6 +1272,17 @@ sheetDragZone.addEventListener("pointercancel", (e) => {
   sheet.style.touchAction = "pan-y";
   sheet.style.transition = "transform 0.25s ease";
   setSheetTranslate(sheet.classList.contains("open") ? 0 : getClosedOffset());
+});
+
+sheetDragZone.addEventListener("click", (e) => {
+  // タップで開閉
+  if (e.target.closest(".sheet-handle") || e.target === sheetTitle || sheetDragZone.contains(e.target)) {
+    if (sheet.classList.contains("open")) {
+      closeSheet();
+    } else {
+      openSheet();
+    }
+  }
 });
 
 window.addEventListener("resize", () => {
