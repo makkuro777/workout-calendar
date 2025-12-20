@@ -189,14 +189,15 @@
       border: 1px solid #eaeaea;
       border-radius: 10px;
       overflow: hidden;
-      height: 80vh;
+      max-height: 80vh;
+      margin-bottom: 20vh;
     }
 
     .week-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 10px 12px;
+      padding: 16px 14px;
       border-bottom: 1px solid #f0f0f0;
       cursor: pointer;
       gap: 10px;
@@ -416,29 +417,22 @@
       cursor: pointer;
     }
 
-    .sets-toggle {
-      display: flex;
-      justify-content: flex-end;
-      margin-top: 6px;
-      margin-bottom: 4px;
-      gap: 6px;
-    }
-
     .collapse-sets-btn {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
       border: 1px solid #ccc;
       background: #fff;
-      border-radius: 10px;
-      padding: 6px 10px;
+      border-radius: 8px;
+      padding: 4px 8px;
       cursor: pointer;
-      font-size: 14px;
+      font-size: 12px;
       line-height: 1.1;
+      white-space: nowrap;
     }
 
     .collapse-sets-btn .collapse-icon {
-      font-size: 16px;
+      font-size: 14px;
       line-height: 1;
     }
 
@@ -590,7 +584,7 @@
 
 <div id="sheet" class="sheet">
   <div class="sheet-drag-zone" id="sheet-drag-zone">
-    <div class="sheet-handle">
+    <div class="sheet-handle" id="sheet-handle">
       <div class="sheet-handle-bar"></div>
     </div>
     <div id="sheet-title" class="sheet-title"></div>
@@ -845,7 +839,7 @@ function updateExerciseBlockBodyPart(block) {
   }
 }
 
-function createExerciseBlock(data) {
+function createExerciseBlock(data, collapsedAtStart = false) {
   const block = document.createElement("div");
   block.className = "exercise-block";
 
@@ -866,7 +860,16 @@ function createExerciseBlock(data) {
   leftHeader.appendChild(title);
   leftHeader.appendChild(badge);
 
-  header.appendChild(leftHeader);
+  const collapseBtn = document.createElement("button");
+  collapseBtn.className = "collapse-sets-btn";
+  const collapseIcon = document.createElement("span");
+  collapseIcon.className = "collapse-icon";
+  collapseIcon.textContent = "▼";
+  const collapseLabel = document.createElement("span");
+  collapseLabel.textContent = "セットを収納";
+  collapseBtn.appendChild(collapseIcon);
+  collapseBtn.appendChild(collapseLabel);
+  leftHeader.appendChild(collapseBtn);
 
   const del = document.createElement("button");
   del.className = "remove-exercise";
@@ -875,28 +878,26 @@ function createExerciseBlock(data) {
     block.remove();
     saveCurrentDay();
   });
-  header.appendChild(del);
 
+  const rightHeader = document.createElement("div");
+  rightHeader.style.display = "flex";
+  rightHeader.style.alignItems = "center";
+  rightHeader.style.gap = "6px";
+
+  rightHeader.appendChild(del);
+
+  header.appendChild(leftHeader);
+  header.appendChild(rightHeader);
   block.appendChild(header);
-
-  const setsWrapper = document.createElement("div");
-  setsWrapper.className = "sets-wrapper";
 
   const wrap = document.createElement("div");
   wrap.className = "exercise-select-wrapper";
   const exSel = createExerciseSelect(data.exercise);
   wrap.appendChild(exSel);
-  setsWrapper.appendChild(wrap);
+  block.appendChild(wrap);
 
-  const setsToggle = document.createElement("div");
-  setsToggle.className = "sets-toggle";
-
-  const collapseBtn = document.createElement("button");
-  collapseBtn.className = "collapse-sets-btn";
-  collapseBtn.innerHTML = `<span class="collapse-icon">▼</span><span>セットを収納</span>`;
-  setsToggle.appendChild(collapseBtn);
-
-  setsWrapper.appendChild(setsToggle);
+  const setsWrapper = document.createElement("div");
+  setsWrapper.className = "sets-wrapper";
 
   const sets = document.createElement("div");
   sets.className = "sets-container";
@@ -921,19 +922,20 @@ function createExerciseBlock(data) {
   });
   setsWrapper.appendChild(addSetBtn);
 
-  block.appendChild(setsWrapper);
-
-  const toggleSets = () => {
-    const collapsed = setsWrapper.classList.toggle("collapsed");
-    collapseBtn.querySelector(".collapse-icon").textContent = collapsed ? "▲" : "▼";
-    collapseBtn.querySelector("span:nth-child(2)").textContent = collapsed ? "セットを展開" : "セットを収納";
+  const updateCollapseState = (collapsed) => {
+    setsWrapper.classList.toggle("collapsed", collapsed);
+    collapseIcon.textContent = collapsed ? "▲" : "▼";
+    collapseLabel.textContent = collapsed ? "セットを展開" : "セットを収納";
   };
-  collapseBtn.addEventListener("click", toggleSets);
 
-  exSel.addEventListener("change", () => {
-    updateExerciseBlockBodyPart(block);
-    saveCurrentDay();
+  updateCollapseState(collapsedAtStart);
+
+  collapseBtn.addEventListener("click", () => {
+    const collapsed = !setsWrapper.classList.contains("collapsed");
+    updateCollapseState(collapsed);
   });
+
+  block.appendChild(setsWrapper);
 
   return block;
 }
@@ -987,18 +989,20 @@ function populateSheetForDate(key) {
   exerciseList.innerHTML = "";
 
   if (data.exercises.length) {
-    data.exercises.forEach(ex => exerciseList.appendChild(createExerciseBlock(ex)));
+    data.exercises.forEach(ex => exerciseList.appendChild(createExerciseBlock(ex, true)));
   } else {
-    exerciseList.appendChild(createExerciseBlock({}));
+    exerciseList.appendChild(createExerciseBlock({}, true));
   }
 
   note.value = data.note || "";
+
 }
 
 function handleDateClick(key) {
   const wasOpen = sheet.classList.contains("open");
 
   if (selectedDateKey === key && wasOpen) {
+    // 同じ日付をもう一度 → 引っ込める（openを外すだけでヘッダー残る）
     closeSheet();
     return;
   }
@@ -1028,7 +1032,7 @@ function handleDateClick(key) {
    入力監視（オートセーブ）
 ------------------------------------------------------ */
 addExerciseBtn.addEventListener("click", () => {
-  exerciseList.appendChild(createExerciseBlock({}));
+  exerciseList.appendChild(createExerciseBlock({}, false));
   saveCurrentDay();
 });
 
@@ -1064,7 +1068,8 @@ function openDrawer() {
   calendarContainer.classList.add("dimmed");
   sheet.classList.add("dimmed");
   todayBtn.classList.add("dimmed");
-  menuBtn.classList.add("shifted");
+  const drawerWidth = drawer.getBoundingClientRect().width;
+  menuBtn.style.transform = `translateX(${drawerWidth}px)`;
 }
 
 function closeDrawer() {
@@ -1073,7 +1078,7 @@ function closeDrawer() {
   calendarContainer.classList.remove("dimmed");
   sheet.classList.remove("dimmed");
   todayBtn.classList.remove("dimmed");
-  menuBtn.classList.remove("shifted");
+  menuBtn.style.transform = "";
 }
 
 function toggleDrawer() {
@@ -1104,6 +1109,7 @@ function jumpToToday() {
   current = new Date(today);
   currentWeekStart = startOfWeek(today);
   selectedDateKey = todayKey;
+  // 途中の週移動アニメーション状態をリセット
   resetWeekAnimationState();
   closeDrawer();
   closeSheet();
@@ -1160,14 +1166,15 @@ drawerBackdrop.addEventListener("pointerup", handleDrawerPointerEnd);
 drawerBackdrop.addEventListener("pointercancel", handleDrawerPointerEnd);
 
 /* ------------------------------------------------------
-   メモシートのドラッグ＆スクロール連動
-   ハンドル＋タイトル領域のみで下方向ドラッグできる
------------------------------------------------------- */
+   メモシートのドラッグ（ハンドルのみ）＆スクロール連動
+   ハンドルを下方向ドラッグした時だけ引っ込める
+------------------------------------------------------- */
 let sheetStartY = 0;
 let sheetStartTranslate = 0;
 let sheetPointerId = null;
 let sheetDragging = false;
 let sheetStartX = 0;
+let sheetTapFromDrag = false;
 
 function getClosedOffset() {
   const handleVisible = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--sheet-handle-visible"), 10) || 0;
@@ -1213,6 +1220,7 @@ sheetDragZone.addEventListener("pointerdown", (e) => {
   sheetStartX = e.clientX;
   sheetStartTranslate = getCurrentTranslate();
   sheetDragging = false;
+  sheetTapFromDrag = false;
   sheet.style.transition = "none";
   sheetDragZone.setPointerCapture(sheetPointerId);
 });
@@ -1226,6 +1234,7 @@ sheetDragZone.addEventListener("pointermove", (e) => {
   if (!sheetDragging) {
     if (Math.abs(dy) < startDragThreshold || Math.abs(dy) < Math.abs(dx)) return;
 
+    // 上部エリアのみでドラッグ開始。開始時点のスクロール位置で固定する。
     sheetDragging = true;
     sheetStartTranslate = getCurrentTranslate();
     sheetStartY = e.clientY;
@@ -1243,7 +1252,7 @@ function finishSheetDrag(dy) {
   const offset = getClosedOffset();
   const currentTranslate = getCurrentTranslate();
   sheet.style.transition = "transform 0.25s ease";
-  const threshold = offset * 0.2;
+  const threshold = offset * 0.12;
   if (dy > threshold || currentTranslate > threshold) {
     closeSheet();
   } else {
@@ -1256,6 +1265,7 @@ sheetDragZone.addEventListener("pointerup", (e) => {
   const dy = e.clientY - sheetStartY;
   if (sheetDragging) {
     finishSheetDrag(dy);
+    sheetTapFromDrag = true;
   }
   sheetPointerId = null;
   sheetDragging = false;
@@ -1266,6 +1276,7 @@ sheetDragZone.addEventListener("pointerup", (e) => {
 
 sheetDragZone.addEventListener("pointercancel", (e) => {
   if (e.pointerId !== sheetPointerId) return;
+  sheetTapFromDrag = sheetDragging || sheetTapFromDrag;
   sheetPointerId = null;
   sheetDragging = false;
   sheet.style.overflowY = "auto";
@@ -1274,14 +1285,23 @@ sheetDragZone.addEventListener("pointercancel", (e) => {
   setSheetTranslate(sheet.classList.contains("open") ? 0 : getClosedOffset());
 });
 
-sheetDragZone.addEventListener("click", (e) => {
-  // タップで開閉
-  if (e.target.closest(".sheet-handle") || e.target === sheetTitle || sheetDragZone.contains(e.target)) {
-    if (sheet.classList.contains("open")) {
-      closeSheet();
-    } else {
-      openSheet();
-    }
+sheetDragZone.addEventListener("click", () => {
+  if (sheetDragging || sheetTapFromDrag) {
+    sheetTapFromDrag = false;
+    return;
+  }
+  if (sheet.classList.contains("open")) {
+    closeSheet();
+  } else {
+    openSheet();
+  }
+});
+
+sheetHandle.addEventListener("click", () => {
+  if (sheet.classList.contains("open")) {
+    closeSheet();
+  } else {
+    openSheet();
   }
 });
 
