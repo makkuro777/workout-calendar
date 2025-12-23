@@ -109,11 +109,17 @@
       gap: 4px;
       margin-top: 4px;
     }
-    .dot {
-  width: 10px;
-  height: 10px;
+ .dot {
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
 }
 
     /* Workout screen */
@@ -410,11 +416,16 @@ function fillPreview(container, raw) {
 
     parts.add(cat.label);
 
-    const dot = document.createElement("span");
-    dot.className = "dot";
-    dot.style.backgroundColor = cat.color;
-    dot.title = cat.label;
-    container.appendChild(dot);
+const dot = document.createElement("span");
+dot.className = "dot";
+dot.style.backgroundColor = cat.color;
+
+// 丸の中に入れる文字（背中 → 背、それ以外は先頭1文字）
+dot.textContent = (cat.label === "背中") ? "背" : cat.label[0];
+
+dot.title = cat.label;
+container.appendChild(dot);
+
   });
 }
 
@@ -659,5 +670,6 @@ function fillPreview(container, raw) {
   </script>
 </body>
 </html>
+
 
 
