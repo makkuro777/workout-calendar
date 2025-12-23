@@ -577,6 +577,31 @@ container.appendChild(dot);
     /* ------------------------
        詳細編集
     ------------------------ */
+       function collectSetsFromUI() {
+      const rows = [...setsEditor.querySelectorAll(".set-row-edit")];
+      const sets = rows.map(r => ({
+        weight: r.querySelector("input").value,
+        reps: r.querySelector("select").value
+      })).filter(s => s.weight || s.reps);
+      return sets.length ? sets : [{ weight: "", reps: "" }];
+    }
+
+    function saveDetailDraft() {
+      if (!pendingExerciseName || !selectedDateKey) return;
+      if (editingIndex === null || editingIndex === undefined || editingIndex < 0) return;
+      const sets = collectSetsFromUI();
+      exercisesForDate[editingIndex] = { exercise: pendingExerciseName, sets };
+      events[selectedDateKey] = { exercises: exercisesForDate };
+      saveEvents();
+      renderWorkoutList();
+      renderCalendar();
+    }
+
+    function scheduleSaveDetailDraft() {
+      clearTimeout(saveDraftTimer);
+      saveDraftTimer = setTimeout(saveDetailDraft, 300);
+    }
+
     function createSetEditorRow(setData, onChange) {
       const row = document.createElement("div");
       row.className = "set-row-edit";
@@ -606,13 +631,46 @@ container.appendChild(dot);
     }
 
     function openDetailEditor(exercise, index) {
-      editingIndex = index;
+  // 種目名を先に確定
+  pendingExerciseName = exercise.exercise || pendingExerciseName || "";
+
+  // A案：新規ならこの時点で配列に追加して保存先を確定
+  if (index === null || index === undefined || index < 0) {
+    const draft = {
+      exercise: pendingExerciseName,
+      sets: (exercise.sets && exercise.sets.length) ? exercise.sets : [{ weight: "", reps: "" }]
+    };
+    exercisesForDate.push(draft);
+    editingIndex = exercisesForDate.length - 1;
+
+    // ここで一旦保存（種目だけ選んだ状態でも残してOKとのことなので保存する）
+    events[selectedDateKey] = { exercises: exercisesForDate };
+    saveEvents();
+    renderWorkoutList();
+    renderCalendar();
+  } else {
+    // 既存の編集
+    editingIndex = index;
+  }
+
+  // 以降は今まで通り画面を描画
+  detailTitle.textContent = pendingExerciseName || "種目";
+  setsEditor.innerHTML = "";
+  const sets = exercise.sets && exercise.sets.length ? exercise.sets : [{weight:"", reps:""}];
+  sets.forEach(s => {
+    const row = createSetEditorRow(s, scheduleSaveDetailDraft);
+    setsEditor.appendChild(row);
+  });
+  detailDeleteBtn.style.display = (editingIndex !== null) ? "inline-flex" : "none";
+  showScreen("detail");
+}
+
       pendingExerciseName = exercise.exercise || pendingExerciseName || "";
       detailTitle.textContent = pendingExerciseName || "種目";
       setsEditor.innerHTML = "";
       const sets = exercise.sets && exercise.sets.length ? exercise.sets : [{weight:"", reps:""}];
       sets.forEach(s => {
-        const row = createSetEditorRow(s, () => {});
+        const row = createSetEditorRow(s, scheduleSaveDetailDraft);
         setsEditor.appendChild(row);
       });
       detailDeleteBtn.style.display = index !== null ? "inline-flex" : "none";
@@ -620,8 +678,9 @@ container.appendChild(dot);
     }
 
     document.getElementById("detail-add-set").addEventListener("click", () => {
-      const row = createSetEditorRow({weight:"", reps:""}, () => {});
-      setsEditor.appendChild(row);
+     const row = createSetEditorRow({weight:"", reps:""}, scheduleSaveDetailDraft);
+setsEditor.appendChild(row);
+scheduleSaveDetailDraft();
     });
 
     document.getElementById("detail-save").addEventListener("click", () => {
@@ -670,6 +729,7 @@ container.appendChild(dot);
   </script>
 </body>
 </html>
+
 
 
 
