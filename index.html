@@ -60,17 +60,6 @@
       gap: 8px;
       margin-bottom: 10px;
     }
-    .today-top {
-      border: 1px solid #1976d2;
-      background: #e3f2fd;
-      color: #1976d2;
-      padding: 6px 10px;
-      border-radius: 10px;
-      cursor: pointer;
-      font-weight: 700;
-      font-size: 12px;
-      white-space: nowrap;
-    }
     .month-label { font-weight: 700; font-size: 18px; flex: 1; text-align: center; }
     .nav-btn {
       border: none;
@@ -140,31 +129,13 @@
       gap: 10px;
       margin-top: 6px;
     }
-    .swipe-row {
-      position: relative;
-      overflow: hidden;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    }
-    .swipe-content {
+    .card {
       background: #fff;
       border: 1px solid #eee;
       border-radius: 12px;
       padding: 10px;
-      transition: transform 0.2s ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
       cursor: pointer;
-    }
-    .swipe-delete {
-      position: absolute;
-      top: 0;
-      right: 0;
-      height: 100%;
-      width: 90px;
-      background: #e53935;
-      color: #fff;
-      border: none;
-      cursor: pointer;
-      font-weight: 700;
     }
     .card-title { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
     .card-sets { font-size: 12px; color: #555; }
@@ -244,8 +215,21 @@
       width: 100%;
     }
     .detail-actions {
-      display: none;
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
     }
+    .primary-btn, .secondary-btn, .danger-btn {
+      flex: 1;
+      padding: 10px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .primary-btn { background: #1976d2; color: #fff; }
+    .secondary-btn { background: #eee; color: #333; }
+    .danger-btn { background: #f7d7d7; color: #c62828; }
   </style>
 </head>
 
@@ -258,7 +242,6 @@
         <div id="month-label" class="month-label"></div>
         <select id="month-select" class="month-select"></select>
         <button id="next" class="nav-btn">＞</button>
-        <button id="today-top" class="today-top">今日に戻る</button>
       </div>
       <div class="calendar-wrapper">
         <table>
@@ -298,12 +281,16 @@
     <!-- Exercise Detail Screen -->
     <div id="detail-screen" class="screen">
       <div class="header">
-        <button id="back-to-selection" class="back-btn">← ワークアウト</button>
+        <button id="back-to-selection" class="back-btn">← 戻る</button>
         <div class="title">セット入力</div>
       </div>
       <div id="detail-title" class="detail-title"></div>
       <div id="sets-editor" class="sets-editor"></div>
       <button id="detail-add-set" class="add-set">＋ セットを追加</button>
+      <div class="detail-actions">
+        <button id="detail-save" class="primary-btn">保存</button>
+        <button id="detail-delete" class="danger-btn" style="display:none;">削除</button>
+      </div>
     </div>
   </div>
 
@@ -328,14 +315,13 @@
     const monthLabel = document.getElementById("month-label");
     const monthSelect = document.getElementById("month-select");
     const body = document.getElementById("calendar-body");
-    const calendarWrapper = document.getElementById("calendar-wrapper");
     const workoutDateLabel = document.getElementById("workout-date");
     const workoutList = document.getElementById("workout-list");
     const workoutEmpty = document.getElementById("workout-empty");
     const selectionList = document.getElementById("selection-list");
     const detailTitle = document.getElementById("detail-title");
     const setsEditor = document.getElementById("sets-editor");
-    const todayTopBtn = document.getElementById("today-top");
+    const detailDeleteBtn = document.getElementById("detail-delete");
 
     const exerciseCategories = [
       { label: "胸", color: "#e91e63", items: ["ベンチプレス", "ダンベルプレス", "インクラインスミスプレス", "ペックフライ"] },
@@ -365,20 +351,8 @@
     }
 
     function getBodyPartColor(name) {
-      const cat = exerciseCategories.find(c => c.items.includes(name) || c.label === name);
+      const cat = exerciseCategories.find(c => c.items.includes(name));
       return cat ? cat.color : "#999";
-    }
-
-    function persistExercises() {
-      if (!selectedDateKey) return;
-      if (exercisesForDate.length) {
-        events[selectedDateKey] = { exercises: exercisesForDate };
-      } else {
-        delete events[selectedDateKey];
-      }
-      saveEvents();
-      renderCalendar();
-      renderWorkoutList();
     }
 
     function showScreen(name) {
@@ -425,16 +399,12 @@
       container.innerHTML = "";
       const data = normalizeEvent(raw);
       if (!data.exercises.length) return;
-      const parts = new Set();
       data.exercises.forEach(ex => {
-        const cat = exerciseCategories.find(c => c.items.includes(ex.exercise));
-        if (cat) parts.add(cat.label);
-      });
-      parts.forEach(label => {
+        if (!ex.exercise) return;
         const chip = document.createElement("span");
         chip.className = "chip";
-        chip.textContent = label;
-        chip.style.backgroundColor = getBodyPartColor(label);
+        chip.textContent = ex.exercise;
+        chip.style.backgroundColor = getBodyPartColor(ex.exercise);
         container.appendChild(chip);
       });
     }
@@ -499,71 +469,6 @@
       render();
     };
 
-    todayTopBtn.addEventListener("click", () => {
-      const today = new Date();
-      current = new Date(today);
-      const key = dateKey(today.getFullYear(), today.getMonth(), today.getDate());
-      selectedDateKey = key;
-      render();
-    });
-
-    // Horizontal swipe to change month
-    let calStartX = 0, calStartY = 0, calSwiping = false;
-    calendarWrapper.addEventListener("touchstart", (e) => {
-      if (e.touches.length !== 1) return;
-      const t = e.touches[0];
-      calStartX = t.clientX;
-      calStartY = t.clientY;
-      calSwiping = true;
-      calendarWrapper.style.transition = "none";
-    });
-    calendarWrapper.addEventListener("touchmove", (e) => {
-      if (!calSwiping) return;
-      const t = e.touches[0];
-      const dx = t.clientX - calStartX;
-      const dy = t.clientY - calStartY;
-      if (Math.abs(dy) > Math.abs(dx)) return;
-      calendarWrapper.style.transform = `translateX(${dx}px)`;
-    });
-    calendarWrapper.addEventListener("touchend", (e) => {
-      if (!calSwiping) return;
-      calSwiping = false;
-      const t = e.changedTouches[0];
-      const dx = t.clientX - calStartX;
-      const dy = t.clientY - calStartY;
-      const threshold = 60;
-      calendarWrapper.style.transition = "transform 0.2s ease";
-      if (Math.abs(dx) > threshold && Math.abs(dx) > Math.abs(dy)) {
-        if (dx < 0) {
-          calendarWrapper.style.transform = "translateX(-100%)";
-          setTimeout(() => {
-            current.setMonth(current.getMonth() + 1);
-            render();
-            calendarWrapper.style.transition = "none";
-            calendarWrapper.style.transform = "translateX(100%)";
-            requestAnimationFrame(() => {
-              calendarWrapper.style.transition = "transform 0.2s ease";
-              calendarWrapper.style.transform = "translateX(0)";
-            });
-          }, 200);
-        } else {
-          calendarWrapper.style.transform = "translateX(100%)";
-          setTimeout(() => {
-            current.setMonth(current.getMonth() - 1);
-            render();
-            calendarWrapper.style.transition = "none";
-            calendarWrapper.style.transform = "translateX(-100%)";
-            requestAnimationFrame(() => {
-              calendarWrapper.style.transition = "transform 0.2s ease";
-              calendarWrapper.style.transform = "translateX(0)";
-            });
-          }, 200);
-        }
-      } else {
-        calendarWrapper.style.transform = "translateX(0)";
-      }
-    });
-
     /* ------------------------
        ワークアウト画面
     ------------------------ */
@@ -584,10 +489,8 @@
       }
       workoutEmpty.style.display = "none";
       exercisesForDate.forEach((ex, idx) => {
-        const row = document.createElement("div");
-        row.className = "swipe-row";
-        const content = document.createElement("div");
-        content.className = "swipe-content";
+        const card = document.createElement("div");
+        card.className = "card";
         const title = document.createElement("div");
         title.className = "card-title";
         title.textContent = ex.exercise || "種目";
@@ -596,57 +499,12 @@
         sets.textContent = ex.sets && ex.sets.length
           ? ex.sets.map(s => `${s.weight || "-"}kg x ${s.reps || "-"}回`).join(" / ")
           : "セット未入力";
-        content.appendChild(title);
-        content.appendChild(sets);
-        const delBtn = document.createElement("button");
-        delBtn.className = "swipe-delete";
-        delBtn.textContent = "削除";
-        delBtn.addEventListener("click", () => {
-          exercisesForDate.splice(idx,1);
-          persistExercises();
+        card.appendChild(title);
+        card.appendChild(sets);
+        card.addEventListener("click", () => {
+          openDetailEditor(ex, idx);
         });
-
-        row.appendChild(content);
-        row.appendChild(delBtn);
-        workoutList.appendChild(row);
-
-        let startX=0, startY=0, swiping=false, shifted=false;
-        row.addEventListener("pointerdown", (e) => {
-          if (e.pointerType === "mouse" && e.buttons !== 1) return;
-          startX = e.clientX; startY = e.clientY; swiping = true; shifted = false;
-          content.style.transition = "none";
-          row.setPointerCapture(e.pointerId);
-        });
-        row.addEventListener("pointermove", (e) => {
-          if (!swiping) return;
-          const dx = e.clientX - startX;
-          const dy = e.clientY - startY;
-          if (Math.abs(dy) > Math.abs(dx)) return;
-          const clamped = Math.min(0, Math.max(-90, dx));
-          content.style.transform = `translateX(${clamped}px)`;
-          if (clamped === -90) shifted = true;
-        });
-        row.addEventListener("pointerup", (e) => {
-          if (!swiping) return;
-          const dx = e.clientX - startX;
-          const dy = e.clientY - startY;
-          swiping = false;
-          content.style.transition = "transform 0.2s ease";
-          if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) && dx < 0) {
-            content.style.transform = "translateX(-90px)";
-          } else {
-            content.style.transform = "translateX(0)";
-            if (!shifted) {
-              openDetailEditor(ex, idx);
-            }
-          }
-          row.releasePointerCapture(e.pointerId);
-        });
-        row.addEventListener("pointercancel", () => {
-          swiping = false;
-          content.style.transition = "transform 0.2s ease";
-          content.style.transform = "translateX(0)";
-        });
+        workoutList.appendChild(card);
       });
     }
 
@@ -679,11 +537,7 @@
           btn.textContent = name;
           btn.addEventListener("click", () => {
             pendingExerciseName = name;
-            const newExercise = { exercise: name, sets: [{weight:"", reps:""}] };
-            exercisesForDate.push(newExercise);
-            editingIndex = exercisesForDate.length - 1;
-            persistExercises();
-            openDetailEditor(newExercise, editingIndex);
+            openDetailEditor({ exercise: name, sets: [{weight:"", reps:""}] }, null);
             showScreen("detail");
           });
           items.appendChild(btn);
@@ -730,25 +584,6 @@
       return row;
     }
 
-    function readSetsFromEditor() {
-      const rows = [...setsEditor.querySelectorAll(".set-row-edit")];
-      return rows.map(r => ({
-        weight: r.querySelector("input").value,
-        reps: r.querySelector("select").value
-      })).filter(s => s.weight || s.reps);
-    }
-
-    function applyDetailChanges() {
-      if (editingIndex === null || editingIndex === undefined || editingIndex < 0) return;
-      const sets = readSetsFromEditor();
-      const exercise = {
-        exercise: pendingExerciseName,
-        sets: sets.length ? sets : [{ weight: "", reps: "" }]
-      };
-      exercisesForDate[editingIndex] = exercise;
-      persistExercises();
-    }
-
     function openDetailEditor(exercise, index) {
       editingIndex = index;
       pendingExerciseName = exercise.exercise || pendingExerciseName || "";
@@ -756,21 +591,55 @@
       setsEditor.innerHTML = "";
       const sets = exercise.sets && exercise.sets.length ? exercise.sets : [{weight:"", reps:""}];
       sets.forEach(s => {
-        const row = createSetEditorRow(s, applyDetailChanges);
+        const row = createSetEditorRow(s, () => {});
         setsEditor.appendChild(row);
       });
+      detailDeleteBtn.style.display = index !== null ? "inline-flex" : "none";
       showScreen("detail");
     }
 
     document.getElementById("detail-add-set").addEventListener("click", () => {
-      const row = createSetEditorRow({weight:"", reps:""}, applyDetailChanges);
+      const row = createSetEditorRow({weight:"", reps:""}, () => {});
       setsEditor.appendChild(row);
-      applyDetailChanges();
+    });
+
+    document.getElementById("detail-save").addEventListener("click", () => {
+      const rows = [...setsEditor.querySelectorAll(".set-row-edit")];
+      const sets = rows.map(r => ({
+        weight: r.querySelector("input").value,
+        reps: r.querySelector("select").value
+      })).filter(s => s.weight || s.reps);
+      if (!pendingExerciseName) return alert("種目を選択してください");
+      const exercise = { exercise: pendingExerciseName, sets: sets.length ? sets : [{weight:"", reps:""}] };
+      if (editingIndex === null || editingIndex === undefined || editingIndex < 0) {
+        exercisesForDate.push(exercise);
+      } else {
+        exercisesForDate[editingIndex] = exercise;
+      }
+      events[selectedDateKey] = { exercises: exercisesForDate };
+      saveEvents();
+      renderWorkoutList();
+      renderCalendar();
+      showScreen("workout");
+    });
+
+    detailDeleteBtn.addEventListener("click", () => {
+      if (editingIndex !== null && editingIndex >= 0) {
+        exercisesForDate.splice(editingIndex,1);
+        if (exercisesForDate.length) {
+          events[selectedDateKey] = { exercises: exercisesForDate };
+        } else {
+          delete events[selectedDateKey];
+        }
+        saveEvents();
+        renderWorkoutList();
+        renderCalendar();
+      }
+      showScreen("workout");
     });
 
     document.getElementById("back-to-selection").addEventListener("click", () => {
-      applyDetailChanges();
-      showScreen("workout");
+      showSelection();
     });
 
     /* ------------------------
@@ -780,4 +649,3 @@
   </script>
 </body>
 </html>
-
