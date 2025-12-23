@@ -88,6 +88,7 @@
       cursor: pointer;
       position: relative;
       background: #fff;
+      overflow: hidden;
     }
     td:hover { background: #f7f7f7; }
     .day-number {
@@ -108,12 +109,12 @@
       gap: 4px;
       margin-top: 4px;
     }
-    .chip {
-      padding: 2px 6px;
-      border-radius: 999px;
-      font-size: 10px;
-      color: #fff;
-    }
+    .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
 
     /* Workout screen */
     .workout-header {
@@ -395,17 +396,21 @@
       }
     }
 
-    function fillPreview(container, raw) {
-      container.innerHTML = "";
-      const data = normalizeEvent(raw);
-      if (!data.exercises.length) return;
-      data.exercises.forEach(ex => {
+   function fillPreview(container, raw) {␊
+      container.innerHTML = "";␊
+      const data = normalizeEvent(raw);␊
+      if (!data.exercises.length) return;␊
+      const parts = new Set();␊
+      data.exercises.forEach(ex => {␊
         if (!ex.exercise) return;
-        const chip = document.createElement("span");
-        chip.className = "chip";
-        chip.textContent = ex.exercise;
-        chip.style.backgroundColor = getBodyPartColor(ex.exercise);
-        container.appendChild(chip);
+        const cat = exerciseCategories.find(c => c.items.includes(ex.exercise));
+        if (!cat || parts.has(cat.label)) return;
+        parts.add(cat.label);
+        const dot = document.createElement("span");
+        dot.className = "dot";
+        dot.style.backgroundColor = cat.color;
+        dot.title = cat.label;
+        container.appendChild(dot);
       });
     }
 
@@ -649,3 +654,4 @@
   </script>
 </body>
 </html>
+
