@@ -382,7 +382,7 @@
       monthSelect.addEventListener("change", () => {
         const [yStr, mStr] = monthSelect.value.split("-");
         current = new Date(parseInt(yStr,10), parseInt(mStr,10)-1, 1);
-        render();
+        renderCalendar();
       });
     })();
 
@@ -396,23 +396,28 @@
       }
     }
 
-   function fillPreview(container, raw) {␊
-      container.innerHTML = "";␊
-      const data = normalizeEvent(raw);␊
-      if (!data.exercises.length) return;␊
-      const parts = new Set();␊
-      data.exercises.forEach(ex => {␊
-        if (!ex.exercise) return;
-        const cat = exerciseCategories.find(c => c.items.includes(ex.exercise));
-        if (!cat || parts.has(cat.label)) return;
-        parts.add(cat.label);
-        const dot = document.createElement("span");
-        dot.className = "dot";
-        dot.style.backgroundColor = cat.color;
-        dot.title = cat.label;
-        container.appendChild(dot);
-      });
-    }
+function fillPreview(container, raw) {
+  container.innerHTML = "";
+  const data = normalizeEvent(raw);
+  if (!data.exercises.length) return;
+
+  const parts = new Set();
+  data.exercises.forEach(ex => {
+    if (!ex.exercise) return;
+
+    const cat = exerciseCategories.find(c => c.items.includes(ex.exercise));
+    if (!cat || parts.has(cat.label)) return;
+
+    parts.add(cat.label);
+
+    const dot = document.createElement("span");
+    dot.className = "dot";
+    dot.style.backgroundColor = cat.color;
+    dot.title = cat.label;
+    container.appendChild(dot);
+  });
+}
+
 
     function renderCalendar() {
       updateMonthUI();
@@ -467,11 +472,11 @@
 
     document.getElementById("prev").onclick = () => {
       current.setMonth(current.getMonth() - 1);
-      render();
+      renderCalendar();
     };
     document.getElementById("next").onclick = () => {
       current.setMonth(current.getMonth() + 1);
-      render();
+      renderCalendar();
     };
 
     /* ------------------------
@@ -654,4 +659,5 @@
   </script>
 </body>
 </html>
+
 
