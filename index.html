@@ -363,6 +363,7 @@
     let exercisesForDate = [];
     let editingIndex = null;
     let pendingExerciseName = "";
+    let pendingExerciseName
 
     const screens = {
       calendar: document.getElementById("calendar-screen"),
@@ -555,6 +556,7 @@ container.appendChild(dot);
     }
 
    function renderWorkoutList() {
+ function renderWorkoutList() {
   workoutList.innerHTML = "";
   if (!exercisesForDate.length) {
     workoutEmpty.style.display = "block";
@@ -572,12 +574,11 @@ container.appendChild(dot);
     const delBtn = document.createElement("button");
     delBtn.className = "swipe-delete";
     delBtn.textContent = "削除";
-    delBtn.addEventListener("pointerdown", (e) => {
-  e.stopPropagation(); // ← ここで止める
-});
 
-delBtn.addEventListener("click", (e) => {
-  e.stopPropagation(); // ← ここで止める
+    // 削除ボタンを押した時に「詳細に飛ばない」ためのストップ
+    delBtn.addEventListener("pointerdown", (e) => {
+      e.stopPropagation();
+    });
 
     delBtn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -597,6 +598,7 @@ delBtn.addEventListener("click", (e) => {
 
     const content = document.createElement("div");
     content.className = "swipe-content";
+    content.style.transform = "translateX(0)";
 
     const title = document.createElement("div");
     title.className = "card-title";
@@ -615,27 +617,27 @@ delBtn.addEventListener("click", (e) => {
     row.appendChild(content);
     workoutList.appendChild(row);
 
-    // --- swipe handling ---
+    // --- swipe handling（カード本体だけに付ける）---
     let startX = 0, startY = 0;
     let swiping = false;
     let moved = false;
 
-    row.addEventListener("pointerdown", (e) => {
+    content.addEventListener("pointerdown", (e) => {
       if (e.pointerType === "mouse" && e.buttons !== 1) return;
       startX = e.clientX;
       startY = e.clientY;
       swiping = true;
       moved = false;
       content.style.transition = "none";
-      row.setPointerCapture(e.pointerId);
+      content.setPointerCapture(e.pointerId);
     });
 
-    row.addEventListener("pointermove", (e) => {
+    content.addEventListener("pointermove", (e) => {
       if (!swiping) return;
       const dx = e.clientX - startX;
       const dy = e.clientY - startY;
 
-      // 縦移動が強いならスワイプ扱いしない（スクロール優先）
+      // 縦スクロール優先
       if (Math.abs(dy) > Math.abs(dx)) return;
 
       moved = true;
@@ -643,7 +645,7 @@ delBtn.addEventListener("click", (e) => {
       content.style.transform = `translateX(${clamped}px)`;
     });
 
-    row.addEventListener("pointerup", (e) => {
+    content.addEventListener("pointerup", (e) => {
       if (!swiping) return;
       swiping = false;
       content.style.transition = "transform 0.2s ease";
@@ -651,29 +653,22 @@ delBtn.addEventListener("click", (e) => {
       const dx = e.clientX - startX;
       const dy = e.clientY - startY;
 
-      // 左にしっかりスワイプしたら開く
       if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) && dx < 0) {
         content.style.transform = "translateX(-80px)";
       } else {
-        // スワイプ未成立なら閉じる
         content.style.transform = "translateX(0)";
-
-        // ほぼ動いてないなら「タップ」とみなして詳細を開く
-        if (!moved) {
-          openDetailEditor(ex, idx);
-        }
+        if (!moved) openDetailEditor(ex, idx);
       }
 
-      row.releasePointerCapture(e.pointerId);
+      content.releasePointerCapture(e.pointerId);
     });
 
-    row.addEventListener("pointercancel", () => {
+    content.addEventListener("pointercancel", () => {
       swiping = false;
       content.style.transition = "transform 0.2s ease";
       content.style.transform = "translateX(0)";
     });
 
-    // タップでも開ける（スワイプ中はpointerup側で制御）
     content.addEventListener("click", () => {
       openDetailEditor(ex, idx);
     });
@@ -854,6 +849,7 @@ scheduleSaveDetailDraft();
   </script>
 </body>
 </html>
+
 
 
 
