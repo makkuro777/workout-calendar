@@ -121,6 +121,16 @@
   color: #fff;
   line-height: 1;
 }
+/* --- swipe 修正1：削除ボタンを裏に隠す --- */
+.swipe-content {
+  position: relative;
+  z-index: 1;   /* 表（カード本体） */
+}
+
+.swipe-actions {
+  position: absolute; /* 念のため明示 */
+  z-index: 0;         /* 裏（削除ボタン） */
+}
 
     /* Workout screen */
     .workout-header {
@@ -837,6 +847,7 @@ scheduleSaveDetailDraft();
   </script>
 </body>
 </html>
+
 
 
 
