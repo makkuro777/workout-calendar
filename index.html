@@ -276,7 +276,13 @@
   cursor: pointer;
   font-weight: 700;
 }
+.swipe-actions {
+  pointer-events: none;
+}
 
+.swipe-row.open .swipe-actions {
+  pointer-events: auto;
+}
 .swipe-content {
   background: #fff;
   border: 1px solid #eee;
@@ -598,6 +604,8 @@ container.appendChild(dot);
     const content = document.createElement("div");
     content.className = "swipe-content";
     content.style.transform = "translateX(0)";
+    row.classList.remove("open");
+
 
     const title = document.createElement("div");
     title.className = "card-title";
@@ -839,6 +847,7 @@ scheduleSaveDetailDraft();
   </script>
 </body>
 </html>
+
 
 
 
