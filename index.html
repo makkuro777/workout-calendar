@@ -665,19 +665,7 @@ container.appendChild(dot);
   showScreen("detail");
 }
 
-      pendingExerciseName = exercise.exercise || pendingExerciseName || "";
-      detailTitle.textContent = pendingExerciseName || "種目";
-      setsEditor.innerHTML = "";
-      const sets = exercise.sets && exercise.sets.length ? exercise.sets : [{weight:"", reps:""}];
-      sets.forEach(s => {
-        const row = createSetEditorRow(s, scheduleSaveDetailDraft);
-        setsEditor.appendChild(row);
-      });
-      detailDeleteBtn.style.display = index !== null ? "inline-flex" : "none";
-      showScreen("detail");
-    }
-
-    document.getElementById("detail-add-set").addEventListener("click", () => {
+         document.getElementById("detail-add-set").addEventListener("click", () => {
      const row = createSetEditorRow({weight:"", reps:""}, scheduleSaveDetailDraft);
 setsEditor.appendChild(row);
 scheduleSaveDetailDraft();
@@ -729,6 +717,7 @@ scheduleSaveDetailDraft();
   </script>
 </body>
 </html>
+
 
 
 
