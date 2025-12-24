@@ -572,6 +572,13 @@ container.appendChild(dot);
     const delBtn = document.createElement("button");
     delBtn.className = "swipe-delete";
     delBtn.textContent = "削除";
+    delBtn.addEventListener("pointerdown", (e) => {
+  e.stopPropagation(); // ← ここで止める
+});
+
+delBtn.addEventListener("click", (e) => {
+  e.stopPropagation(); // ← ここで止める
+
     delBtn.addEventListener("click", (e) => {
       e.stopPropagation();
 
@@ -847,6 +854,7 @@ scheduleSaveDetailDraft();
   </script>
 </body>
 </html>
+
 
 
 
