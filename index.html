@@ -621,13 +621,18 @@ container.appendChild(dot);
     let moved = false;
 
     content.addEventListener("pointerdown", (e) => {
+      // 他の行が開いてたら全部閉じる
+document.querySelectorAll(".swipe-content").forEach(el => {
+  el.style.transition = "transform 0.2s ease";
+  el.style.transform = "translateX(0)";
+});
+
       if (e.pointerType === "mouse" && e.buttons !== 1) return;
       startX = e.clientX;
       startY = e.clientY;
       swiping = true;
       moved = false;
       content.style.transition = "none";
-      content.setPointerCapture(e.pointerId);
     });
 
     content.addEventListener("pointermove", (e) => {
@@ -656,7 +661,6 @@ container.appendChild(dot);
         if (!moved) openDetailEditor(ex, idx);
       }
 
-      content.releasePointerCapture(e.pointerId);
     });
 
     content.addEventListener("pointercancel", () => {
@@ -835,6 +839,7 @@ scheduleSaveDetailDraft();
   </script>
 </body>
 </html>
+
 
 
 
