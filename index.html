@@ -363,7 +363,8 @@
     let exercisesForDate = [];
     let editingIndex = null;
     let pendingExerciseName = "";
-    let pendingExerciseName
+    let saveDraftTimer = null;
+
 
     const screens = {
       calendar: document.getElementById("calendar-screen"),
@@ -555,8 +556,7 @@ container.appendChild(dot);
       showScreen("workout");
     }
 
-   function renderWorkoutList() {
- function renderWorkoutList() {
+  function renderWorkoutList() {
   workoutList.innerHTML = "";
   if (!exercisesForDate.length) {
     workoutEmpty.style.display = "block";
@@ -575,7 +575,6 @@ container.appendChild(dot);
     delBtn.className = "swipe-delete";
     delBtn.textContent = "削除";
 
-    // 削除ボタンを押した時に「詳細に飛ばない」ためのストップ
     delBtn.addEventListener("pointerdown", (e) => {
       e.stopPropagation();
     });
@@ -617,7 +616,6 @@ container.appendChild(dot);
     row.appendChild(content);
     workoutList.appendChild(row);
 
-    // --- swipe handling（カード本体だけに付ける）---
     let startX = 0, startY = 0;
     let swiping = false;
     let moved = false;
@@ -636,8 +634,6 @@ container.appendChild(dot);
       if (!swiping) return;
       const dx = e.clientX - startX;
       const dy = e.clientY - startY;
-
-      // 縦スクロール優先
       if (Math.abs(dy) > Math.abs(dx)) return;
 
       moved = true;
@@ -675,16 +671,6 @@ container.appendChild(dot);
   });
 }
 
-
-    document.getElementById("back-to-calendar").addEventListener("click", () => {
-      showScreen("calendar");
-    });
-
-    document.getElementById("fab-add").addEventListener("click", () => {
-      editingIndex = null;
-      pendingExerciseName = "";
-      showSelection();
-    });
 
     /* ------------------------
        選択画面
@@ -849,6 +835,7 @@ scheduleSaveDetailDraft();
   </script>
 </body>
 </html>
+
 
 
 
