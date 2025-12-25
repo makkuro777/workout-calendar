@@ -696,7 +696,8 @@ document.getElementById("back-to-calendar").addEventListener("click", () => {
 document.getElementById("fab-add").addEventListener("click", () => {
   editingIndex = null;
   pendingExerciseName = "";
-  showSelection();
+  document.getElementById("back-to-selection").addEventListener("click", () => {
+  showScreen("workout");
 });
 
 
@@ -863,6 +864,7 @@ scheduleSaveDetailDraft();
   </script>
 </body>
 </html>
+
 
 
 
