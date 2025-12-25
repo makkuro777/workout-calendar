@@ -696,7 +696,11 @@ document.getElementById("back-to-calendar").addEventListener("click", () => {
 document.getElementById("fab-add").addEventListener("click", () => {
   editingIndex = null;
   pendingExerciseName = "";
-  document.getElementById("back-to-selection").addEventListener("click", () => {
+  showSelection();
+});
+
+// セット入力画面の「← 戻る」→ ワークアウトへ
+document.getElementById("back-to-selection").addEventListener("click", () => {
   showScreen("workout");
 });
 
@@ -864,6 +868,7 @@ scheduleSaveDetailDraft();
   </script>
 </body>
 </html>
+
 
 
 
