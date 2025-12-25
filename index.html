@@ -682,6 +682,17 @@ document.querySelectorAll(".swipe-content").forEach(el => {
     });
   });
 }
+// ワークアウト画面 → カレンダーに戻る
+document.getElementById("back-to-calendar").addEventListener("click", () => {
+  showScreen("calendar");
+});
+
+// ＋ボタン → 種目選択へ
+document.getElementById("fab-add").addEventListener("click", () => {
+  editingIndex = null;
+  pendingExerciseName = "";
+  showSelection();
+});
 
 
     /* ------------------------
@@ -847,6 +858,7 @@ scheduleSaveDetailDraft();
   </script>
 </body>
 </html>
+
 
 
 
