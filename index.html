@@ -699,9 +699,9 @@ document.getElementById("fab-add").addEventListener("click", () => {
   showSelection();
 });
 
-// セット入力画面の「← 戻る」→ ワークアウトへ
 document.getElementById("back-to-selection").addEventListener("click", () => {
-  showScreen("workout");
+  showScreen("workout");     // ← ワークアウトに戻る
+  renderWorkoutList();       // ← 念のため一覧を描き直す
 });
 
 
@@ -868,6 +868,7 @@ scheduleSaveDetailDraft();
   </script>
 </body>
 </html>
+
 
 
 
