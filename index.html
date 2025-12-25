@@ -587,6 +587,7 @@ container.appendChild(dot);
 
     delBtn.addEventListener("click", (e) => {
       e.stopPropagation();
+row.classList.remove("open"); // ★追加（保険）
 
       exercisesForDate.splice(idx, 1);
       if (exercisesForDate.length) {
@@ -634,6 +635,7 @@ document.querySelectorAll(".swipe-content").forEach(el => {
   el.style.transition = "transform 0.2s ease";
   el.style.transform = "translateX(0)";
 });
+document.querySelectorAll(".swipe-row.open").forEach(r => r.classList.remove("open")); // ★追加
 
       if (e.pointerType === "mouse" && e.buttons !== 1) return;
       startX = e.clientX;
@@ -662,12 +664,15 @@ document.querySelectorAll(".swipe-content").forEach(el => {
       const dx = e.clientX - startX;
       const dy = e.clientY - startY;
 
-      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) && dx < 0) {
-        content.style.transform = "translateX(-80px)";
-      } else {
-        content.style.transform = "translateX(0)";
-        if (!moved) openDetailEditor(ex, idx);
-      }
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) && dx < 0) {
+  content.style.transform = "translateX(-80px)";
+  row.classList.add("open");        // ★追加
+} else {
+  content.style.transform = "translateX(0)";
+  row.classList.remove("open");     // ★追加
+  if (!moved) openDetailEditor(ex, idx);
+}
+
 
     });
 
@@ -858,6 +863,7 @@ scheduleSaveDetailDraft();
   </script>
 </body>
 </html>
+
 
 
 
