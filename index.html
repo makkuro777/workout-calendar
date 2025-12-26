@@ -295,6 +295,14 @@
 
 /* 詳細画面の「種目削除」は使わない */
 #detail-delete { display: none !important; }
+    .calendar-wrapper {
+  overflow: hidden;
+}
+
+.calendar-slide {
+  transition: transform 0.25s ease;
+}
+
   </style>
 </head>
 
@@ -448,6 +456,72 @@
       monthSelect.addEventListener("change", () => {
         const [yStr, mStr] = monthSelect.value.split("-");
         current = new Date(parseInt(yStr,10), parseInt(mStr,10)-1, 1);
+        const calendarWrapper = document.querySelector(".calendar-wrapper");
+
+function slideToMonth(direction) {
+  // direction: "next" or "prev"
+  const table = calendarWrapper.querySelector("table");
+
+  // 初期位置
+  table.classList.add("calendar-slide");
+  table.style.transform = "translateX(0)";
+
+  // 出ていく方向
+  const outX = direction === "next" ? "-100%" : "100%";
+  const inX  = direction === "next" ? "100%" : "-100%";
+
+  // ① 今の月をスライドアウト
+  requestAnimationFrame(() => {
+    table.style.transform = `translateX(${outX})`;
+  });
+
+  // ② 月を切り替えて、反対側から入れる
+  setTimeout(() => {
+    table.classList.remove("calendar-slide");
+    table.style.transform = `translateX(${inX})`;
+
+    // 月変更
+    if (direction === "next") {
+      current.setMonth(current.getMonth() + 1);
+    } else {
+      current.setMonth(current.getMonth() - 1);
+    }
+    renderCalendar();
+
+    const newTable = calendarWrapper.querySelector("table");
+    newTable.classList.add("calendar-slide");
+
+    // ③ 新しい月をスライドイン
+    requestAnimationFrame(() => {
+      newTable.style.transform = "translateX(0)";
+    });
+  }, 250);
+}
+let startX = 0;
+let isSwiping = false;
+
+calendarWrapper.addEventListener("touchstart", (e) => {
+  startX = e.touches[0].clientX;
+  isSwiping = true;
+});
+
+calendarWrapper.addEventListener("touchend", (e) => {
+  if (!isSwiping) return;
+  isSwiping = false;
+
+  const dx = e.changedTouches[0].clientX - startX;
+
+  if (Math.abs(dx) < 50) return;
+
+  if (dx < 0) {
+    // 左スワイプ → 次の月（右から出現）
+    slideToMonth("next");
+  } else {
+    // 右スワイプ → 前の月（左から出現）
+    slideToMonth("prev");
+  }
+});
+
         renderCalendar();
       });
     })();
@@ -962,6 +1036,7 @@ document.getElementById("back-to-selection").addEventListener("click", () => {
   </script>
 </body>
 </html>
+
 
 
 
