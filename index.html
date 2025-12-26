@@ -687,18 +687,6 @@ document.querySelectorAll(".swipe-row.open").forEach(r => r.classList.remove("op
     });
   });
 }
-// ワークアウト画面 → カレンダーに戻る
-document.getElementById("back-to-calendar").addEventListener("click", () => {
-  showScreen("calendar");
-});
-
-// ＋ボタン → 種目選択へ
-document.getElementById("fab-add").addEventListener("click", () => {
-  editingIndex = null;
-  pendingExerciseName = "";
-  showSelection();
-});
-
 
 
     /* ------------------------
@@ -852,6 +840,25 @@ scheduleSaveDetailDraft();
       renderCalendar();
       showScreen("workout");
     });
+// ワークアウト画面 → カレンダーに戻る
+document.getElementById("back-to-calendar").addEventListener("click", () => {
+  showScreen("calendar");
+});
+
+// ＋ボタン → 種目選択へ
+document.getElementById("fab-add").addEventListener("click", () => {
+  editingIndex = null;
+  pendingExerciseName = "";
+  showSelection();
+});
+
+// セット入力 → 戻る → ワークアウト（選択画面は経由しない）
+document.getElementById("back-to-selection").addEventListener("click", () => {
+  saveDetailDraft();     // 入力途中も保存
+  showScreen("workout"); // ワークアウトへ戻る
+  renderWorkoutList();   // 一覧更新
+  renderCalendar();      // 点も更新
+});
 
     /* ------------------------
        初期描画
@@ -860,6 +867,7 @@ scheduleSaveDetailDraft();
   </script>
 </body>
 </html>
+
 
 
 
