@@ -321,6 +321,11 @@
 .cal-panel.anim {
   transition: transform 0.25s ease;
 }
+/* カレンダー領域：縦スクロール無効（横スワイプ優先） */
+#calendar-wrapper {
+  touch-action: pan-x;          /* 縦スクロールさせず横だけ */
+  overscroll-behavior: contain; /* 上下の引っ張り/バウンスを抑える */
+}
 
   </style>
 </head>
@@ -669,6 +674,9 @@ calendarWrapper.addEventListener("pointermove", (e) => {
   const dx = e.clientX - startX;
   const dy = e.clientY - startY;
   if (Math.abs(dy) > Math.abs(dx)) return;
+  // 横スワイプ中はページスクロールを止める
+e.preventDefault();
+
   if (Math.abs(dx) > 8) moved = true;
 });
 
@@ -1064,6 +1072,7 @@ document.getElementById("back-to-selection").addEventListener("click", () => {
   </script>
 </body>
 </html>
+
 
 
 
