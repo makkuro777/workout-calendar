@@ -756,9 +756,11 @@ document.querySelectorAll(".swipe-row.open").forEach(r => r.classList.remove("op
       const row = document.createElement("div");
       row.className = "set-row-edit";
 
-      const weight = document.createElement("input");
-      weight.type = "number";
-      weight.placeholder = "重量(kg)";
+const weight = document.createElement("input");
+weight.type = "text";                 // ← numberだと挙動が微妙な端末があるので text 推奨
+weight.inputMode = "decimal";         // ← 数字キーボード（小数点あり）
+weight.pattern = "[0-9]*\\.?[0-9]*";  // ← 入力制限のヒント
+weight.placeholder = "重量(kg)";
       weight.value = setData.weight || "";
       weight.addEventListener("input", onChange);
 
@@ -867,6 +869,7 @@ document.getElementById("back-to-selection").addEventListener("click", () => {
   </script>
 </body>
 </html>
+
 
 
 
