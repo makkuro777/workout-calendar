@@ -302,6 +302,25 @@
 .calendar-slide {
   transition: transform 0.25s ease;
 }
+/* ==== Calendar slide animation ==== */
+.calendar-wrapper {
+  position: relative;
+  overflow: hidden; /* 既にあるけど念のため */
+}
+
+.cal-panel {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+}
+
+.cal-panel.active {
+  position: relative; /* 表示中だけ通常レイアウト */
+}
+
+.cal-panel.anim {
+  transition: transform 0.25s ease;
+}
 
   </style>
 </head>
@@ -316,16 +335,19 @@
         <select id="month-select" class="month-select"></select>
         <button id="next" class="nav-btn">＞</button>
       </div>
-      <div class="calendar-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>日</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th>土</th>
-            </tr>
-          </thead>
-          <tbody id="calendar-body"></tbody>
-        </table>
-      </div>
+    <div class="calendar-wrapper" id="calendar-wrapper">
+  <div id="cal-panel" class="cal-panel active">
+    <table>
+      <thead>
+        <tr>
+          <th>日</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th>土</th>
+        </tr>
+      </thead>
+      <tbody id="calendar-body"></tbody>
+    </table>
+  </div>
+</div>
+
     </div>
 
     <!-- Workout Screen -->
@@ -454,76 +476,11 @@
         }
       }
       monthSelect.addEventListener("change", () => {
-        const [yStr, mStr] = monthSelect.value.split("-");
-        current = new Date(parseInt(yStr,10), parseInt(mStr,10)-1, 1);
-        const calendarWrapper = document.querySelector(".calendar-wrapper");
-
-function slideToMonth(direction) {
-  // direction: "next" or "prev"
-  const table = calendarWrapper.querySelector("table");
-
-  // 初期位置
-  table.classList.add("calendar-slide");
-  table.style.transform = "translateX(0)";
-
-  // 出ていく方向
-  const outX = direction === "next" ? "-100%" : "100%";
-  const inX  = direction === "next" ? "100%" : "-100%";
-
-  // ① 今の月をスライドアウト
-  requestAnimationFrame(() => {
-    table.style.transform = `translateX(${outX})`;
-  });
-
-  // ② 月を切り替えて、反対側から入れる
-  setTimeout(() => {
-    table.classList.remove("calendar-slide");
-    table.style.transform = `translateX(${inX})`;
-
-    // 月変更
-    if (direction === "next") {
-      current.setMonth(current.getMonth() + 1);
-    } else {
-      current.setMonth(current.getMonth() - 1);
-    }
-    renderCalendar();
-
-    const newTable = calendarWrapper.querySelector("table");
-    newTable.classList.add("calendar-slide");
-
-    // ③ 新しい月をスライドイン
-    requestAnimationFrame(() => {
-      newTable.style.transform = "translateX(0)";
-    });
-  }, 250);
-}
-let startX = 0;
-let isSwiping = false;
-
-calendarWrapper.addEventListener("touchstart", (e) => {
-  startX = e.touches[0].clientX;
-  isSwiping = true;
+  const [yStr, mStr] = monthSelect.value.split("-");
+  current = new Date(parseInt(yStr,10), parseInt(mStr,10)-1, 1);
+  renderCalendar();
 });
 
-calendarWrapper.addEventListener("touchend", (e) => {
-  if (!isSwiping) return;
-  isSwiping = false;
-
-  const dx = e.changedTouches[0].clientX - startX;
-
-  if (Math.abs(dx) < 50) return;
-
-  if (dx < 0) {
-    // 左スワイプ → 次の月（右から出現）
-    slideToMonth("next");
-  } else {
-    // 右スワイプ → 前の月（左から出現）
-    slideToMonth("prev");
-  }
-});
-
-        renderCalendar();
-      });
     })();
 
     function updateMonthUI() {
@@ -617,6 +574,127 @@ container.appendChild(dot);
 
 document.getElementById("prev").onclick = () => animateChangeMonth(-1);
 document.getElementById("next").onclick = () => animateChangeMonth(+1);
+// ==== Calendar: swipe + buttons with animation ====
+// ※ HTMLで calendar-wrapper に id="calendar-wrapper" を付けたので、それを使う
+const calendarWrapper = document.getElementById("calendar-wrapper");
+
+let isAnimating = false;
+let startX = 0, startY = 0;
+let dragging = false;
+let moved = false;
+
+function animateChangeMonth(delta) {
+  if (isAnimating) return;
+  isAnimating = true;
+
+  const oldPanel = document.getElementById("cal-panel");
+
+  // 次の月の Date を作る
+  const nextDate = new Date(current);
+  nextDate.setMonth(nextDate.getMonth() + delta);
+
+  // 新しいパネルを作って、そこに次の月を描画する（id重複を避ける）
+  const newPanel = oldPanel.cloneNode(true);
+  newPanel.id = "cal-panel-new";
+  newPanel.classList.remove("active");
+
+  const newBody = newPanel.querySelector("#calendar-body");
+  newBody.id = ""; // id重複防止（重要）
+  calendarWrapper.appendChild(newPanel);
+
+  // 次の月を newBody に描画するために renderCalendar を少しだけ使い回す
+  // → renderCalendarがグローバルの body に書いてるので、一時的に差し替える
+  const oldBodyRef = body; // 既存の const body を使ってる前提
+  body = newBody;
+  const oldCurrent = current;
+  current = nextDate;
+  renderCalendar();
+  current = oldCurrent; // まだ切り替えない
+  body = oldBodyRef;
+
+  // 方向：次の月(+1)は「右から出現」= newは +100% から 0へ
+  //      前の月(-1)は「左から出現」= newは -100% から 0へ
+  const inFrom = delta > 0 ? "100%" : "-100%";
+  const outTo  = delta > 0 ? "-100%" : "100%";
+
+  // 初期位置セット
+  oldPanel.classList.add("anim");
+  newPanel.classList.add("anim");
+  newPanel.style.transform = `translateX(${inFrom})`;
+
+  // アニメ開始
+  requestAnimationFrame(() => {
+    oldPanel.style.transform = `translateX(${outTo})`;
+    newPanel.style.transform = "translateX(0)";
+  });
+
+  // 終了処理
+  newPanel.addEventListener("transitionend", () => {
+    // 月確定
+    current = nextDate;
+    updateMonthUI();
+
+    // oldを捨てて new を正規にする
+    oldPanel.remove();
+    newPanel.id = "cal-panel";
+    newPanel.classList.add("active");
+    newPanel.classList.remove("anim");
+
+    // body参照を新しいtbodyに差し替える（以降の renderCalendar が動くように）
+    const finalBody = newPanel.querySelector("tbody");
+    finalBody.id = "calendar-body";
+    body = finalBody;
+
+    // transformをリセット
+    newPanel.style.transform = "translateX(0)";
+    isAnimating = false;
+  }, { once: true });
+}
+
+// ボタン
+document.getElementById("prev").onclick = () => animateChangeMonth(-1);
+document.getElementById("next").onclick = () => animateChangeMonth(+1);
+
+// スワイプ（pointerで統一）
+calendarWrapper.addEventListener("pointerdown", (e) => {
+  if (isAnimating) return;
+  if (e.pointerType === "mouse" && e.buttons !== 1) return;
+  dragging = true;
+  moved = false;
+  startX = e.clientX;
+  startY = e.clientY;
+});
+
+calendarWrapper.addEventListener("pointermove", (e) => {
+  if (!dragging || isAnimating) return;
+  const dx = e.clientX - startX;
+  const dy = e.clientY - startY;
+  if (Math.abs(dy) > Math.abs(dx)) return;
+  if (Math.abs(dx) > 8) moved = true;
+});
+
+calendarWrapper.addEventListener("pointerup", (e) => {
+  if (!dragging || isAnimating) return;
+  dragging = false;
+
+  const dx = e.clientX - startX;
+  const dy = e.clientY - startY;
+
+  if (!moved) return;
+  if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy)) return;
+
+  if (dx < 0) {
+    // 左スワイプ → 次の月（右から出現）
+    animateChangeMonth(+1);
+  } else {
+    // 右スワイプ → 前の月（左から出現）
+    animateChangeMonth(-1);
+  }
+});
+
+calendarWrapper.addEventListener("pointercancel", () => {
+  dragging = false;
+});
 
 
     /* ------------------------
@@ -1036,6 +1114,7 @@ document.getElementById("back-to-selection").addEventListener("click", () => {
   </script>
 </body>
 </html>
+
 
 
 
