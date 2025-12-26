@@ -411,7 +411,7 @@
 
     const monthLabel = document.getElementById("month-label");
     const monthSelect = document.getElementById("month-select");
-    const body = document.getElementById("calendar-body");
+    let body = document.getElementById("calendar-body");
     const workoutDateLabel = document.getElementById("workout-date");
     const workoutList = document.getElementById("workout-list");
     const workoutEmpty = document.getElementById("workout-empty");
@@ -573,7 +573,6 @@ container.appendChild(dot);
     }
 
 document.getElementById("prev").onclick = () => animateChangeMonth(-1);
-document.getElementById("next").onclick = () => animateChangeMonth(+1);
 // ==== Calendar: swipe + buttons with animation ====
 // ※ HTMLで calendar-wrapper に id="calendar-wrapper" を付けたので、それを使う
 const calendarWrapper = document.getElementById("calendar-wrapper");
@@ -870,55 +869,6 @@ document.querySelectorAll(".swipe-row.open").forEach(r => r.classList.remove("op
     document.getElementById("back-to-workout").addEventListener("click", () => {
       showScreen("workout");
     });
-// ==== カレンダー：スワイプで月移動（アニメ付き） ====
-const calendarWrapper = document.querySelector(".calendar-wrapper");
-const calendarTable = calendarWrapper.querySelector("table");
-
-let calStartX = 0, calStartY = 0;
-let calDragging = false;
-let calMoved = false;
-let suppressCellClick = false;
-
-function animateChangeMonth(delta) {
-  // delta: +1 次の月, -1 前の月
-  const dir = delta > 0 ? "left" : "right"; // left = 次へスライドアウト方向
-
-  // まず今の月をスライドアウト
-  calendarTable.style.transition = "transform 0.18s ease";
-  calendarTable.style.transform = `translateX(${dir === "left" ? "-110%" : "110%"})`;
-
-  const onOut = () => {
-    calendarTable.removeEventListener("transitionend", onOut);
-
-    // 月を更新して描画
-    current.setMonth(current.getMonth() + delta);
-    renderCalendar();
-
-    // 反対側からスタート位置へ
-    calendarTable.style.transition = "none";
-    calendarTable.style.transform = `translateX(${dir === "left" ? "110%" : "-110%"})`;
-
-    // 次フレームでスライドイン
-    requestAnimationFrame(() => {
-      calendarTable.style.transition = "transform 0.20s ease";
-      calendarTable.style.transform = "translateX(0)";
-    });
-  };
-
-  calendarTable.addEventListener("transitionend", onOut, { once: true });
-}
-
-calendarWrapper.addEventListener("pointerdown", (e) => {
-  if (e.pointerType === "mouse" && e.buttons !== 1) return;
-
-  calDragging = true;
-  calMoved = false;
-  calStartX = e.clientX;
-  calStartY = e.clientY;
-
-  calendarTable.style.transition = "none";
-  calendarWrapper.setPointerCapture?.(e.pointerId);
-});
 
 calendarWrapper.addEventListener("pointermove", (e) => {
   if (!calDragging) return;
@@ -1114,6 +1064,7 @@ document.getElementById("back-to-selection").addEventListener("click", () => {
   </script>
 </body>
 </html>
+
 
 
 
