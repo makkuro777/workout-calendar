@@ -623,6 +623,7 @@ document.getElementById("prev").onclick = () => animateChangeMonth(-1);
 // ==== Calendar: swipe + buttons with animation ====
 // ※ HTMLで calendar-wrapper に id="calendar-wrapper" を付けたので、それを使う
 const calendarWrapper = document.getElementById("calendar-wrapper");
+const swipeCatcher = document.getElementById("calendar-swipe-catcher");
 
 let isAnimating = false;
 let startX = 0, startY = 0;
@@ -701,59 +702,7 @@ function animateChangeMonth(delta) {
 document.getElementById("prev").onclick = () => animateChangeMonth(-1);
 document.getElementById("next").onclick = () => animateChangeMonth(+1);
 
-const calendarWrapper = document.getElementById("calendar-wrapper");
-const swipeCatcher = document.getElementById("calendar-swipe-catcher");
 
-let isAnimating = false;
-let startX = 0, startY = 0;
-let dragging = false;
-let moved = false;
-
-function onSwipeStart(e){
-  if (isAnimating) return;
-  if (e.pointerType === "mouse" && e.buttons !== 1) return;
-  dragging = true;
-  moved = false;
-  startX = e.clientX;
-  startY = e.clientY;
-}
-
-function onSwipeMove(e){
-  if (!dragging || isAnimating) return;
-  const dx = e.clientX - startX;
-  const dy = e.clientY - startY;
-
-  // 縦が強いなら無視
-  if (Math.abs(dy) > Math.abs(dx)) return;
-
-  // 横スワイプ成立
-  if (Math.abs(dx) > 8) moved = true;
-
-  // 横スワイプ中はブラウザのスクロール抑止（必要なら）
-  e.preventDefault?.();
-}
-
-function onSwipeEnd(e){
-  if (!dragging || isAnimating) return;
-  dragging = false;
-
-  const dx = e.clientX - startX;
-  const dy = e.clientY - startY;
-
-  if (!moved) return;
-  if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy)) return;
-
-  if (dx < 0) animateChangeMonth(+1); // 左 → 次
-  else        animateChangeMonth(-1); // 右 → 前
-}
-
-// ✅ wrapper と 余白の両方に付ける
-[calendarWrapper, swipeCatcher].forEach(el => {
-  el.addEventListener("pointerdown", onSwipeStart);
-  el.addEventListener("pointermove", onSwipeMove, { passive: false });
-  el.addEventListener("pointerup", onSwipeEnd);
-  el.addEventListener("pointercancel", () => { dragging = false; });
-});
 
 
     /* ------------------------
@@ -1124,6 +1073,7 @@ document.getElementById("back-to-selection").addEventListener("click", () => {
   </script>
 </body>
 </html>
+
 
 
 
