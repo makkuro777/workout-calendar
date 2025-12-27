@@ -30,16 +30,16 @@
   height: 100vh;
   overflow: hidden;
   padding: 16px 12px 32px;
-  position: relative;       /* ★追加 */
 }
 
     .screen {
   display: none;
-  position: absolute;       /* ★追加 */
-  inset: 0;                 /* ★追加（top/right/bottom/left全部0） */
+  height: 100%;
 }
 
-    .screen.active { display: block; }
+    .screen.active { 
+      display: block; 
+    }
 
     .header {
       display: flex;
@@ -353,8 +353,13 @@ html {
   height: 100%;
     }
 #calendar-screen.active {
-  display: flex;
-  flex-direction: column;
+  overflow: hidden;
+}
+    #workout-screen.active,
+#selection-screen.active,
+#detail-screen.active {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
   </style>
 </head>
@@ -1101,6 +1106,7 @@ document.getElementById("back-to-selection").addEventListener("click", () => {
   </script>
 </body>
 </html>
+
 
 
 
