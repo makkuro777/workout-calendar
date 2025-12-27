@@ -353,6 +353,8 @@ html {
   height: 100%;
     }
 #calendar-screen.active {
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
     #workout-screen.active,
@@ -610,6 +612,7 @@ container.appendChild(dot);
         }
 
         cell.addEventListener("click", () => {
+          if (suppressCellClick) return;
           openWorkoutForDate(key);
         });
 
@@ -619,16 +622,17 @@ container.appendChild(dot);
       body.appendChild(row);
     }
 
-document.getElementById("prev").onclick = () => animateChangeMonth(-1);
 // ==== Calendar: swipe + buttons with animation ====
 // ※ HTMLで calendar-wrapper に id="calendar-wrapper" を付けたので、それを使う
 const calendarWrapper = document.getElementById("calendar-wrapper");
-const swipeCatcher = document.getElementById("calendar-swipe-catcher");
+const calendarScreen = document.getElementById("calendar-screen");
 
 let isAnimating = false;
-let startX = 0, startY = 0;
-let dragging = false;
-let moved = false;
+let calStartX = 0;
+let calStartY = 0;
+let calDragging = false;
+let calMoved = false;
+let suppressCellClick = false;
 
 function animateChangeMonth(delta) {
   if (isAnimating) return;
@@ -879,52 +883,49 @@ document.querySelectorAll(".swipe-row.open").forEach(r => r.classList.remove("op
       showScreen("workout");
     });
 
-calendarWrapper.addEventListener("pointermove", (e) => {
-  if (!calDragging) return;
+function shouldHandleCalendarSwipe(target) {
+  return target.closest("#calendar-wrapper") || target.closest("#calendar-swipe-catcher");
+}
 
-  const dx = e.clientX - calStartX;
-  const dy = e.clientY - calStartY;
-
-  // 縦スクロール優先（縦が大きいなら何もしない）
-  if (Math.abs(dy) > Math.abs(dx)) return;
-
-  // 横に少しでも動いたら「スワイプ中」とみなす
-  if (Math.abs(dx) > 8) calMoved = true;
-
-  // 指に追従して動かす（気持ちよさ）
-  calendarTable.style.transform = `translateX(${dx}px)`;
+calendarScreen.addEventListener("pointerdown", (e) => {
+  if (!shouldHandleCalendarSwipe(e.target)) return;
+  if (isAnimating) return;
+  if (e.pointerType === "mouse" && e.buttons !== 1) return;
+  calStartX = e.clientX;
+  calStartY = e.clientY;
+  calDragging = true;
+  calMoved = false;
 });
 
-calendarWrapper.addEventListener("pointerup", (e) => {
+calendarScreen.addEventListener("pointermove", (e) => {
+  if (!calDragging) return;
+  const dx = e.clientX - calStartX;
+  const dy = e.clientY - calStartY;
+  if (Math.abs(dy) > Math.abs(dx)) return;
+  if (Math.abs(dx) > 8) calMoved = true;
+});
+
+calendarScreen.addEventListener("pointerup", (e) => {
   if (!calDragging) return;
   calDragging = false;
 
   const dx = e.clientX - calStartX;
   const dy = e.clientY - calStartY;
 
-  // スワイプが成立したら月移動
   if (calMoved && Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)) {
     suppressCellClick = true;
     setTimeout(() => (suppressCellClick = false), 0);
 
     if (dx < 0) {
-      // 左スワイプ → 次の月
       animateChangeMonth(+1);
     } else {
-      // 右スワイプ → 前の月
       animateChangeMonth(-1);
     }
-  } else {
-    // 成立しなければ元に戻す
-    calendarTable.style.transition = "transform 0.15s ease";
-    calendarTable.style.transform = "translateX(0)";
   }
 });
 
-calendarWrapper.addEventListener("pointercancel", () => {
+calendarScreen.addEventListener("pointercancel", () => {
   calDragging = false;
-  calendarTable.style.transition = "transform 0.15s ease";
-  calendarTable.style.transform = "translateX(0)";
 });
 
     /* ------------------------
@@ -968,7 +969,7 @@ weight.placeholder = "重量(kg)";
       weight.addEventListener("input", onChange);
 
       const reps = document.createElement("select");
-      reps.innerHTML = `<option value=\"\">レップ数</option>` + Array.from({length:30}, (_,i)=>`<option value="${i+1}" ${setData.reps==i+1?"selected":""}>${i+1}回</option>`).join("");
+      reps.innerHTML = `<option value="">レップ数</option>` + Array.from({length:30}, (_,i)=>`<option value="${i+1}" ${setData.reps==i+1?"selected":""}>${i+1}回</option>`).join("");
       reps.addEventListener("change", onChange);
 
       const del = document.createElement("button");
@@ -1073,39 +1074,3 @@ document.getElementById("back-to-selection").addEventListener("click", () => {
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
