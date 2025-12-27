@@ -390,23 +390,26 @@ html {
         <select id="month-select" class="month-select"></select>
         <button id="next" class="nav-btn">＞</button>
       </div>
-    <div class="calendar-wrapper" id="calendar-wrapper">
-  <div id="cal-panel" class="cal-panel active">
-    <table>
-      <thead>
-        <tr>
-          <th>日</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th>土</th>
-        </tr>
-      </thead>
-      <tbody id="calendar-body"></tbody>
-    </table>
-  </div>
-  <div id="calendar-swipe-catcher"></div>
-    </div>
+
+      <div class="calendar-wrapper" id="calendar-wrapper">
+        <div id="cal-panel" class="cal-panel active">
+          <table>
+            <thead>
+              <tr>
+                <th>日</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th>土</th>
+              </tr>
+            </thead>
+            <tbody id="calendar-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ✅ 余白スワイプは wrapper の外 -->
+      <div id="calendar-swipe-catcher"></div>
+    </div> <!-- ✅ calendar-screen を閉じる -->
 
     <!-- Workout Screen -->
     <div id="workout-screen" class="screen">
-      </div>
       <div class="header">
         <button id="back-to-calendar" class="back-btn">← カレンダー</button>
         <div class="title">ワークアウト</div>
@@ -443,6 +446,11 @@ html {
       </div>
     </div>
   </div>
+
+  <script>
+    // あなたのJSそのまま
+  </script>
+</body>
 
   <script>
     /* ------------------------
@@ -1080,5 +1088,6 @@ document.getElementById("back-to-selection").addEventListener("click", () => {
   </script>
 </body>
 </html>
+
 
 
