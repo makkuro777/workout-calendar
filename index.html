@@ -327,6 +327,7 @@
 }
 /* カレンダー領域：縦スクロール無効（横スワイプ優先） */
 #calendar-wrapper {
+  flex: 1;  
   touch-action: pan-x;          /* 縦スクロールさせず横だけ */
   overscroll-behavior: contain; /* 上下の引っ張り/バウンスを抑える */
 }
@@ -338,6 +339,8 @@
     #calendar-screen {
   height: 100%;
   overflow: hidden;
+        display: flex;           /* 追加 */
+  flex-direction: column;  /* 追加 */
 }
 html {
   height: 100%;
@@ -1089,6 +1092,7 @@ document.getElementById("back-to-selection").addEventListener("click", () => {
   </script>
 </body>
 </html>
+
 
 
 
