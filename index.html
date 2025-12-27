@@ -41,8 +41,10 @@
   height: 100%;         /* ★追加 */
 }
 
-    .screen.active { 
-    display: flex;
+.screen.active { display: block; }   /* 基本は block にする */
+
+#calendar-screen.active {
+  display: flex;
   flex-direction: column;
 }
 
@@ -404,6 +406,7 @@ html {
 
     <!-- Workout Screen -->
     <div id="workout-screen" class="screen">
+      </div>
       <div class="header">
         <button id="back-to-calendar" class="back-btn">← カレンダー</button>
         <div class="title">ワークアウト</div>
@@ -1077,4 +1080,5 @@ document.getElementById("back-to-selection").addEventListener("click", () => {
   </script>
 </body>
 </html>
+
 
