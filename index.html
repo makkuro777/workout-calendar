@@ -23,16 +23,19 @@ body {
 
   display: flex;
   justify-content: center;
+    padding: 0 12px;  
 }
 
-.app {
-  width: min(420px, 100vw); /* ← 420pxを上限に、画面より大きくならない */
-  height: 100dvh;           /* ← iPhoneのアドレスバー対策 */
+.app{
+  width: 420px;
+  max-width: calc(100vw - 24px); /* ← 12px×2 の分だけ小さくする */
+  height: 100dvh;
   overflow: hidden;
   padding: 16px 12px 32px;
   position: relative;
-  margin: 0 auto;           /* ← 中央寄せ */
+  margin: 0 auto;
 }
+
 
     .screen {
   display: none;
@@ -1089,6 +1092,7 @@ document.getElementById("back-to-selection").addEventListener("click", () => {
   </script>
 </body>
 </html>
+
 
 
 
