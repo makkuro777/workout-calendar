@@ -30,16 +30,21 @@
   height: 100vh;
   overflow: hidden;
   padding: 16px 12px 32px;
+  position: relative; 
 }
 
     .screen {
   display: none;
-  height: 100%;
+  position: absolute;   /* ★追加：全部同じ基準で重ねる */
+  inset: 0;             /* ★追加 */
+  width: 100%;          /* ★追加 */
+  height: 100%;         /* ★追加 */
 }
 
     .screen.active { 
-      display: block; 
-    }
+    display: flex;
+  flex-direction: column;
+}
 
     .header {
       display: flex;
@@ -394,9 +399,7 @@ html {
       <tbody id="calendar-body"></tbody>
     </table>
   </div>
-</div>
   <div id="calendar-swipe-catcher"></div>
-</div>
     </div>
 
     <!-- Workout Screen -->
@@ -1074,3 +1077,4 @@ document.getElementById("back-to-selection").addEventListener("click", () => {
   </script>
 </body>
 </html>
+
