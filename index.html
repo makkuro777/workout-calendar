@@ -361,6 +361,13 @@ html {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
+    /* 余白でも月スワイプを受け取るための透明エリア */
+#calendar-swipe-catcher{
+  flex: 1;                 /* カレンダー下の余白を全部取る */
+  background: transparent; /* 見た目は変えない */
+  touch-action: pan-x;     /* 横スワイプだけ許可 */
+}
+
   </style>
 </head>
 
@@ -386,7 +393,8 @@ html {
     </table>
   </div>
 </div>
-
+  <div id="calendar-swipe-catcher"></div>
+</div>
     </div>
 
     <!-- Workout Screen -->
@@ -693,28 +701,39 @@ function animateChangeMonth(delta) {
 document.getElementById("prev").onclick = () => animateChangeMonth(-1);
 document.getElementById("next").onclick = () => animateChangeMonth(+1);
 
-// スワイプ（pointerで統一）
-calendarWrapper.addEventListener("pointerdown", (e) => {
+const calendarWrapper = document.getElementById("calendar-wrapper");
+const swipeCatcher = document.getElementById("calendar-swipe-catcher");
+
+let isAnimating = false;
+let startX = 0, startY = 0;
+let dragging = false;
+let moved = false;
+
+function onSwipeStart(e){
   if (isAnimating) return;
   if (e.pointerType === "mouse" && e.buttons !== 1) return;
   dragging = true;
   moved = false;
   startX = e.clientX;
   startY = e.clientY;
-});
+}
 
-calendarWrapper.addEventListener("pointermove", (e) => {
+function onSwipeMove(e){
   if (!dragging || isAnimating) return;
   const dx = e.clientX - startX;
   const dy = e.clientY - startY;
+
+  // 縦が強いなら無視
   if (Math.abs(dy) > Math.abs(dx)) return;
-  // 横スワイプ中はページスクロールを止める
-e.preventDefault();
 
+  // 横スワイプ成立
   if (Math.abs(dx) > 8) moved = true;
-});
 
-calendarWrapper.addEventListener("pointerup", (e) => {
+  // 横スワイプ中はブラウザのスクロール抑止（必要なら）
+  e.preventDefault?.();
+}
+
+function onSwipeEnd(e){
   if (!dragging || isAnimating) return;
   dragging = false;
 
@@ -724,17 +743,16 @@ calendarWrapper.addEventListener("pointerup", (e) => {
   if (!moved) return;
   if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy)) return;
 
-  if (dx < 0) {
-    // 左スワイプ → 次の月（右から出現）
-    animateChangeMonth(+1);
-  } else {
-    // 右スワイプ → 前の月（左から出現）
-    animateChangeMonth(-1);
-  }
-});
+  if (dx < 0) animateChangeMonth(+1); // 左 → 次
+  else        animateChangeMonth(-1); // 右 → 前
+}
 
-calendarWrapper.addEventListener("pointercancel", () => {
-  dragging = false;
+// ✅ wrapper と 余白の両方に付ける
+[calendarWrapper, swipeCatcher].forEach(el => {
+  el.addEventListener("pointerdown", onSwipeStart);
+  el.addEventListener("pointermove", onSwipeMove, { passive: false });
+  el.addEventListener("pointerup", onSwipeEnd);
+  el.addEventListener("pointercancel", () => { dragging = false; });
 });
 
 
@@ -1106,6 +1124,7 @@ document.getElementById("back-to-selection").addEventListener("click", () => {
   </script>
 </body>
 </html>
+
 
 
 
