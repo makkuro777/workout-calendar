@@ -81,13 +81,15 @@ body {
       gap: 8px;
       margin-bottom: 10px;
        margin-top: 8px;
+      position: relative;
+      padding: 0 48px;  
     }
     .month-label{
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
   font-weight: 700;
-  font-size: 18px;
+  font-size: 16px;
   pointer-events: none; /* ボタン操作を邪魔しない */
 }
     .nav-btn {
@@ -408,9 +410,20 @@ html {
   gap: 8px;
 }
 
-#prev, #next{
-  width: 44px;
-  justify-self: center;
+#prev,
+#next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+}
+
+#prev {
+  left: 0;
+}
+
+#next {
+  right: 0;
 }
 
 .month-label{
@@ -419,11 +432,14 @@ html {
   white-space: nowrap;       /* 年月は1行固定 */
 }
 
-.month-select{
-  justify-self: end;         /* 右寄せ */
-  width: 110px;              /* 小さめに固定 */
+.month-select {
+  position: absolute;
+  right: 48px;     /* 右矢印の内側 */
+  top: 50%;
+  transform: translateY(-50%);
   font-size: 11px;
   padding: 4px 6px;
+  width: 110px;
 }
 
   </style>
@@ -1137,6 +1153,7 @@ document.getElementById("back-to-selection").addEventListener("click", () => {
   </script>
 </body>
 </html>
+
 
 
 
