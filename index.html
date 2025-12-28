@@ -402,44 +402,53 @@ html {
   text-align: center;
   pointer-events: none; /* 戻るボタンを邪魔しない */
 }
-/* カレンダー上部：重なり解消レイアウト */
+/* 上部コントロールを2段にする */
 .calendar-controls{
   display: grid;
-  grid-template-columns: 44px 1fr auto 44px; /* ＜ 年月 プルダウン ＞ */
+  grid-template-columns: 44px 1fr 44px; /* 左矢印 / 中央 / 右矢印 */
+  grid-template-rows: auto auto;        /* 1段目: 年月 + 矢印 / 2段目: プルダウン */
   align-items: center;
-  gap: 8px;
+  row-gap: 6px;
+  padding: 6px 0 10px;
 }
 
-#prev,
-#next {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 10;
+/* 矢印は左右端 */
+#prev{
+  grid-column: 1;
+  grid-row: 1;
+  justify-self: start;
 }
 
-#prev {
-  left: 0;
+#next{
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
 }
 
-#next {
-  right: 0;
-}
-
+/* 年月は中央 */
 .month-label{
-  justify-self: center;
+  grid-column: 2;
+  grid-row: 1;
   text-align: center;
-  white-space: nowrap;       /* 年月は1行固定 */
+  font-weight: 700;
+  font-size: 18px;
 }
 
-.month-select {
-  position: absolute;
-  right: 48px;     /* 右矢印の内側 */
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 11px;
+/* プルダウンは2段目で中央に置く（重ならない） */
+.month-select{
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: center;
+  width: 140px;
+  font-size: 12px;
   padding: 4px 6px;
-  width: 110px;
+}
+
+/* ボタンサイズ調整（見切れ対策） */
+.nav-btn{
+  padding: 6px 10px;
+  border-radius: 10px;
+  line-height: 1;
 }
 
   </style>
@@ -1153,6 +1162,7 @@ document.getElementById("back-to-selection").addEventListener("click", () => {
   </script>
 </body>
 </html>
+
 
 
 
