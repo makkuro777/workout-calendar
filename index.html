@@ -72,15 +72,15 @@ body {
       flex: 1;
       text-align: center;
     }
-    .calendar-controls{
-  display: grid;
-  grid-template-columns: 44px 1fr 44px;
-  grid-template-rows: auto auto;
-  align-items: center;
-  row-gap: 8px;
-  margin: 8px 0 10px;
-  padding: 0;
+.calendar-controls{
+  display: flex;
+  align-items: center;        /* ← 縦方向を中央揃え */
+  justify-content: space-between;
+  height: 64px;               /* ← 2行分の高さを固定 */
+  margin: 8px 0 12px;
+  padding: 0 8px;
 }
+
 
 /* 矢印は左右端、年月と同じ行 */
 #prev{ grid-column: 1; grid-row: 1; justify-self: start; }
@@ -113,20 +113,18 @@ body {
   padding: 4px 6px;
 }
 
-    .nav-btn {
-      border: none;
-      background: #e0e0e0;
-      padding: 6px 10px;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    .month-select {
-      font-size: 12px;
-      padding: 6px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      background: #fff;
-    }
+ /* 左右の矢印 */
+.nav-btn{
+  flex: 0 0 auto;
+}
+.month-select{
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 36px;               /* ← 矢印と高さを合わせる */
+  font-size: 12px;
+  padding: 4px 8px;
+}
     .calendar-wrapper { overflow: hidden; border-radius: 10px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
     table { width: 100%; border-collapse: collapse; table-layout: fixed; }
     th, td { text-align: center; padding: 6px; }
@@ -1163,6 +1161,7 @@ document.getElementById("back-to-selection").addEventListener("click", () => {
   </script>
 </body>
 </html>
+
 
 
 
