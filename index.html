@@ -710,6 +710,11 @@ container.appendChild(dot);
       }
 
       body.appendChild(row);
+      while (body.children.length < 6) {
+  const emptyRow = document.createElement("tr");
+  for (let i = 0; i < 7; i++) emptyRow.appendChild(document.createElement("td"));
+  body.appendChild(emptyRow);
+}
     }
 
 // ==== Calendar: swipe + buttons with animation ====
@@ -1164,6 +1169,7 @@ document.getElementById("back-to-selection").addEventListener("click", () => {
   </script>
 </body>
 </html>
+
 
 
 
