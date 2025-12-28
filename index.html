@@ -427,39 +427,19 @@ html {
 .calendar-controls{
   display: grid;
   grid-template-columns: 44px 1fr 44px;
-  grid-template-rows: auto auto;   /* ← 明確に2段 */
   align-items: center;
-  row-gap: 8px;                    /* ← 縦の余白を少し増やす */
-  padding: 8px 0 12px;
+  column-gap: 8px;
+  margin: 8px 0 10px;
+  padding: 0;
 }
 
-/* 矢印は左右端 */
-#prev{
-  grid-column: 1;
-  grid-row: 1;
-  justify-self: start;
-}
-
-#next{
-  grid-column: 3;
-  grid-row: 1;
-  justify-self: end;
-}
-
-.month-label{
-  grid-column: 2;
-  grid-row: 1;          /* ← 必ず1段目 */
-  text-align: center;
-  font-weight: 700;
-  font-size: 18px;
-  line-height: 1.2;
-}
+#prev{ grid-column: 1; justify-self: start; }
+#next{ grid-column: 3; justify-self: end; }
 
 .month-select{
   grid-column: 2;
-  grid-row: 2;          /* ← 必ず2段目 */
   justify-self: center;
-  width: 140px;
+  width: 160px;      /* 好みで調整 */
   font-size: 12px;
   padding: 4px 6px;
 }
@@ -480,7 +460,6 @@ html {
     <div id="calendar-screen" class="screen active">
       <div class="calendar-controls">
         <button id="prev" class="nav-btn">＜</button>
-        <div id="month-label" class="month-label"></div>
         <select id="month-select" class="month-select"></select>
         <button id="next" class="nav-btn">＞</button>
       </div>
@@ -566,7 +545,6 @@ html {
       detail: document.getElementById("detail-screen"),
     };
 
-    const monthLabel = document.getElementById("month-label");
     const monthSelect = document.getElementById("month-select");
     let body = document.getElementById("calendar-body");
     const workoutDateLabel = document.getElementById("workout-date");
@@ -641,15 +619,13 @@ html {
     })();
 
     function updateMonthUI() {
-      const y = current.getFullYear();
-      const m = current.getMonth();
-      monthLabel.textContent = `${y}年 ${m+1}月`;
-      const value = `${y}-${String(m+1).padStart(2,"0")}`;
-      if ([...monthSelect.options].some(o => o.value === value)) {
-        monthSelect.value = value;
-      }
-    }
-
+  const y = current.getFullYear();
+  const m = current.getMonth();
+  const value = `${y}-${String(m+1).padStart(2,"0")}`;
+  if ([...monthSelect.options].some(o => o.value === value)) {
+    monthSelect.value = value;
+  }
+}
 function fillPreview(container, raw) {
   container.innerHTML = "";
   const data = normalizeEvent(raw);
@@ -1187,6 +1163,7 @@ document.getElementById("back-to-selection").addEventListener("click", () => {
   </script>
 </body>
 </html>
+
 
 
 
