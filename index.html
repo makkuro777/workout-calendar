@@ -99,14 +99,7 @@ body {
 .nav-btn{
   flex: 0 0 auto;
 }
-.month-select{
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  height: 40px;               /* ← 矢印と高さを合わせる */
-  font-size: 12px;
-  padding: 4px 8px;
-}
+
     .calendar-wrapper { overflow: hidden; border-radius: 10px; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
     table { width: 100%; border-collapse: collapse; table-layout: fixed; }
     th, td { text-align: center; padding: 6px; }
@@ -415,13 +408,12 @@ html {
 }
 
 /* 共通：矢印とプルダウンを同じ見た目にする */
-.nav-btn,
-.month-select{
-  box-sizing: border-box;
-  height: 100%;              /* ★必ず同じ高さになる */
-  border: 1px solid #ddd;    /* ★ボーダーも揃える */
-  border-radius: 12px;
-  background: #fff;
+.nav-btn, .month-select{
+  height: 64px;          /* ← controlsの高さと同じにする */
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* 矢印だけ */
@@ -441,7 +433,7 @@ html {
   font-size: 15px;
   font-weight: 700;
   padding: 0 38px 0 14px;    /* 右に余白（▼分） */
-  line-height: 1;            /* ★OS差を減らす */
+  line-height: 64px;            /* ★OS差を減らす */
 
   appearance: none;
   -webkit-appearance: none;
@@ -1172,6 +1164,7 @@ document.getElementById("back-to-selection").addEventListener("click", () => {
   </script>
 </body>
 </html>
+
 
 
 
