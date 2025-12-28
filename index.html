@@ -405,11 +405,11 @@ html {
 /* 上部コントロールを2段にする */
 .calendar-controls{
   display: grid;
-  grid-template-columns: 44px 1fr 44px; /* 左矢印 / 中央 / 右矢印 */
-  grid-template-rows: auto auto;        /* 1段目: 年月 + 矢印 / 2段目: プルダウン */
+  grid-template-columns: 44px 1fr 44px;
+  grid-template-rows: auto auto;   /* ← 明確に2段 */
   align-items: center;
-  row-gap: 6px;
-  padding: 6px 0 10px;
+  row-gap: 8px;                    /* ← 縦の余白を少し増やす */
+  padding: 8px 0 12px;
 }
 
 /* 矢印は左右端 */
@@ -425,19 +425,18 @@ html {
   justify-self: end;
 }
 
-/* 年月は中央 */
 .month-label{
   grid-column: 2;
-  grid-row: 1;
+  grid-row: 1;          /* ← 必ず1段目 */
   text-align: center;
   font-weight: 700;
   font-size: 18px;
+  line-height: 1.2;
 }
 
-/* プルダウンは2段目で中央に置く（重ならない） */
 .month-select{
   grid-column: 2;
-  grid-row: 2;
+  grid-row: 2;          /* ← 必ず2段目 */
   justify-self: center;
   width: 140px;
   font-size: 12px;
@@ -1162,6 +1161,7 @@ document.getElementById("back-to-selection").addEventListener("click", () => {
   </script>
 </body>
 </html>
+
 
 
 
