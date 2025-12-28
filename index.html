@@ -82,7 +82,14 @@ body {
       margin-bottom: 10px;
        margin-top: 8px;
     }
-    .month-label { font-weight: 700; font-size: 18px; flex: 1; text-align: center; }
+    .month-label{
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-weight: 700;
+  font-size: 18px;
+  pointer-events: none; /* ボタン操作を邪魔しない */
+}
     .nav-btn {
       border: none;
       background: #e0e0e0;
@@ -380,6 +387,18 @@ html {
   flex: 1;                 /* カレンダー下の余白を全部取る */
   background: transparent; /* 見た目は変えない */
   touch-action: pan-x;     /* 横スワイプだけ許可 */
+}
+/* ヘッダーのタイトルを画面中央に固定 */
+.header {
+  position: relative;
+}
+
+.header .title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  pointer-events: none; /* 戻るボタンを邪魔しない */
 }
 
   </style>
@@ -1093,6 +1112,7 @@ document.getElementById("back-to-selection").addEventListener("click", () => {
   </script>
 </body>
 </html>
+
 
 
 
