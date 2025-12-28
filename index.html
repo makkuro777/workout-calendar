@@ -403,45 +403,62 @@ html {
   text-align: center;
   pointer-events: none; /* 戻るボタンを邪魔しない */
 }
-/* 上部コントロール：左右矢印＋中央プルダウン（1段） */
+/* 3つを同じ「箱」のルールで揃える */
 .calendar-controls{
   display: grid;
-  grid-template-columns: 56px 1fr 56px; /* 矢印エリア広め */
-  align-items: center;
+  grid-template-columns: 56px 1fr 56px;
+  align-items: stretch;      /* ★中央じゃなくstretchがコツ */
   column-gap: 10px;
-  height: 64px;
+  height: 64px;              /* ここが基準の高さ */
   margin: 8px 0 10px;
   padding: 0;
 }
 
-#prev{ grid-column: 1; justify-self: start; }
-#next{ grid-column: 3; justify-self: end; }
+/* 共通：矢印とプルダウンを同じ見た目にする */
+.nav-btn,
+.month-select{
+  box-sizing: border-box;
+  height: 100%;              /* ★必ず同じ高さになる */
+  border: 1px solid #ddd;    /* ★ボーダーも揃える */
+  border-radius: 12px;
+  background: #fff;
+}
 
-/* 矢印ボタン：縦長 */
+/* 矢印だけ */
 .nav-btn{
-  height: 52px;          /* ←もっと縦長に */
-  width: 56px;           /* ←左右で揃える */
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
-  border-radius: 12px;
+  padding: 0;                /* ★余計なpaddingでズレない */
+  font-size: 18px;
   line-height: 1;
 }
 
-/* プルダウン：太字＋横幅UP＋縦中央 */
+/* プルダウンだけ */
 .month-select{
-  grid-column: 2;
+  width: 220px;
   justify-self: center;
-
-  width: 220px;          /* ←横幅大きく */
-  height: 52px;          /* ←矢印と同じ高さ */
   font-size: 15px;
-  font-weight: 700;      /* ←太字 */
-  padding: 0 14px;
+  font-weight: 700;
+  padding: 0 38px 0 14px;    /* 右に余白（▼分） */
+  line-height: 1;            /* ★OS差を減らす */
 
-  border-radius: 12px;
+  appearance: none;
+  -webkit-appearance: none;
+
+  /* ▼アイコンを背景で描く（見た目が揃う） */
+  background-image:
+    linear-gradient(45deg, transparent 50%, #666 50%),
+    linear-gradient(135deg, #666 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) 50%,
+    calc(100% - 12px) 50%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
 }
+
+#prev{ justify-self: start; }
+#next{ justify-self: end; }
 
   </style>
 </head>
@@ -1155,6 +1172,7 @@ document.getElementById("back-to-selection").addEventListener("click", () => {
   </script>
 </body>
 </html>
+
 
 
 
