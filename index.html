@@ -429,23 +429,31 @@ html {
   column-gap: 8px;
   margin: 8px 0 10px;
   padding: 0;
+   height: 64px;  
 }
 
 #prev{ grid-column: 1; justify-self: start; }
 #next{ grid-column: 3; justify-self: end; }
 
+/* プルダウンの文字を枠の中央へ */
 .month-select{
-  grid-column: 2;
-  justify-self: center;
-  width: 160px;      /* 好みで調整 */
-  font-size: 12px;
-  padding: 4px 6px;
+  height: 44px;          /* ← 矢印と同じ高さにすると統一感◎ */
+  line-height: 44px;     /* ← これが効く（中央寄せになる） */
+  padding: 0 12px;       /* ← 上下は0が安定 */
+  display: flex;         /* 一部ブラウザ対策 */
+  align-items: center;   /* 一部ブラウザ対策 */
+  font-size: 13px;
+  border-radius: 12px;
 }
 
-/* ボタンサイズ調整（見切れ対策） */
 .nav-btn{
-  padding: 6px 10px;
-  border-radius: 10px;
+  height: 44px;          /* ← 好きな高さに（例: 44〜56） */
+  min-width: 44px;       /* ← 横も最低これくらいあると押しやすい */
+  display: flex;
+  align-items: center;   /* ← 縦中央 */
+  justify-content: center;
+  padding: 0 12px;       /* ← 縦長にしたいので上下paddingは0が安定 */
+  border-radius: 12px;
   line-height: 1;
 }
 
@@ -1161,6 +1169,7 @@ document.getElementById("back-to-selection").addEventListener("click", () => {
   </script>
 </body>
 </html>
+
 
 
 
