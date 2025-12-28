@@ -72,14 +72,6 @@ body {
       flex: 1;
       text-align: center;
     }
-.calendar-controls{
-  display: flex;
-  align-items: center;        /* ← 縦方向を中央揃え */
-  justify-content: space-between;
-  height: 72px;               /* ← 2行分の高さを固定 */
-  margin: 8px 0 12px;
-  padding: 0 8px;
-}
 
 
 /* 矢印は左右端、年月と同じ行 */
@@ -101,16 +93,6 @@ body {
   font-size: 18px;
   line-height: 1.2;
   pointer-events: none;
-}
-
-/* プルダウンは年月の下（2行目） */
-.month-select{
-  grid-column: 2;
-  grid-row: 2;
-  justify-self: center;
-  width: 140px;
-  font-size: 12px;
-  padding: 4px 6px;
 }
 
  /* 左右の矢印 */
@@ -421,40 +403,44 @@ html {
   text-align: center;
   pointer-events: none; /* 戻るボタンを邪魔しない */
 }
-/* 上部コントロールを2段にする */
+/* 上部コントロール：左右矢印＋中央プルダウン（1段） */
 .calendar-controls{
   display: grid;
-  grid-template-columns: 44px 1fr 44px;
+  grid-template-columns: 56px 1fr 56px; /* 矢印エリア広め */
   align-items: center;
-  column-gap: 8px;
+  column-gap: 10px;
+  height: 64px;
   margin: 8px 0 10px;
   padding: 0;
-   height: 64px;  
 }
 
 #prev{ grid-column: 1; justify-self: start; }
 #next{ grid-column: 3; justify-self: end; }
 
-/* プルダウンの文字を枠の中央へ */
-.month-select{
-  height: 44px;          /* ← 矢印と同じ高さにすると統一感◎ */
-  line-height: 44px;     /* ← これが効く（中央寄せになる） */
-  padding: 0 12px;       /* ← 上下は0が安定 */
-  display: flex;         /* 一部ブラウザ対策 */
-  align-items: center;   /* 一部ブラウザ対策 */
-  font-size: 13px;
-  border-radius: 12px;
-}
-
+/* 矢印ボタン：縦長 */
 .nav-btn{
-  height: 44px;          /* ← 好きな高さに（例: 44〜56） */
-  min-width: 44px;       /* ← 横も最低これくらいあると押しやすい */
+  height: 52px;          /* ←もっと縦長に */
+  width: 56px;           /* ←左右で揃える */
   display: flex;
-  align-items: center;   /* ← 縦中央 */
+  align-items: center;
   justify-content: center;
-  padding: 0 12px;       /* ← 縦長にしたいので上下paddingは0が安定 */
+  padding: 0;
   border-radius: 12px;
   line-height: 1;
+}
+
+/* プルダウン：太字＋横幅UP＋縦中央 */
+.month-select{
+  grid-column: 2;
+  justify-self: center;
+
+  width: 220px;          /* ←横幅大きく */
+  height: 52px;          /* ←矢印と同じ高さ */
+  font-size: 15px;
+  font-weight: 700;      /* ←太字 */
+  padding: 0 14px;
+
+  border-radius: 12px;
 }
 
   </style>
@@ -1169,6 +1155,7 @@ document.getElementById("back-to-selection").addEventListener("click", () => {
   </script>
 </body>
 </html>
+
 
 
 
