@@ -470,6 +470,13 @@ td { height: var(--cell-h); }
 #calendar-swipe-catcher{
   flex: 1;
 }
+    
+td.empty {
+  border: none !important;
+  background: transparent !important;
+  cursor: default !important;
+}
+td.empty:hover { background: transparent !important; }
 
   </style>
 </head>
@@ -725,15 +732,21 @@ container.appendChild(dot);
       }
 if (count > 0) {
   while (count < 7) {
-    row.appendChild(document.createElement("td"));
-    count++;
+const td = document.createElement("td");
+td.classList.add("empty");     // ←追加
+row.appendChild(td);
+count++;
   }
   body.appendChild(row);
 }
 
 while (body.children.length < 6) {
   const emptyRow = document.createElement("tr");
-  for (let i = 0; i < 7; i++) emptyRow.appendChild(document.createElement("td"));
+  for (let i = 0; i < 7; i++) {
+    const td = document.createElement("td");
+    td.classList.add("empty");   // ★追加
+    emptyRow.appendChild(td);
+  }
   body.appendChild(emptyRow);
 }
     }
@@ -1190,6 +1203,7 @@ document.getElementById("back-to-selection").addEventListener("click", () => {
   </script>
 </body>
 </html>
+
 
 
 
