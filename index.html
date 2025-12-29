@@ -452,6 +452,25 @@ html {
 #prev{ justify-self: start; }
 #next{ justify-self: end; }
 
+    :root{
+  --cell-h: 70px;   /* tdの高さと合わせる */
+  --head-h: 34px;   /* 曜日行のだいたいの高さ（微調整OK） */
+}
+
+/* 既存 td の height:70px; はそのままでOK */
+td { height: var(--cell-h); }
+
+/* calendar-wrapper を “縮まない固定高” にする */
+#calendar-wrapper{
+  flex: 0 0 auto; /* ← flex:1 をやめる（潰れ防止の本命） */
+  height: calc(var(--head-h) + var(--cell-h) * 6);
+}
+
+/* 余白スワイプ領域が残りを受け持つ */
+#calendar-swipe-catcher{
+  flex: 1;
+}
+
   </style>
 </head>
 
@@ -1171,6 +1190,7 @@ document.getElementById("back-to-selection").addEventListener("click", () => {
   </script>
 </body>
 </html>
+
 
 
 
