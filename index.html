@@ -426,27 +426,26 @@ html {
   line-height: 1;
 }
 
-/* プルダウンだけ */
 .month-select{
-  width: 220px;
+  width: auto;
+  height: 64px;              /* 矢印ボタンと同じ高さ */
   justify-self: center;
-  font-size: 15px;
+
+  font-size: 16px;
   font-weight: 700;
-  padding: 0 38px 0 14px;    /* 右に余白（▼分） */
-  line-height: 64px;            /* ★OS差を減らす */
+  color: #000;               /* ← 文字色：黒 */
 
-  appearance: none;
+  background: transparent;   /* ← 背景なし */
+  border: none;              /* ← 枠線なし */
+  padding: 0 4px;            /* ← 最小限の余白 */
+  line-height: 64px;
+  text-align: center;
+
+  appearance: none;          /* ← ▼ を消す */
   -webkit-appearance: none;
+  -moz-appearance: none;
 
-  /* ▼アイコンを背景で描く（見た目が揃う） */
-  background-image:
-    linear-gradient(45deg, transparent 50%, #666 50%),
-    linear-gradient(135deg, #666 50%, transparent 50%);
-  background-position:
-    calc(100% - 18px) 50%,
-    calc(100% - 12px) 50%;
-  background-size: 6px 6px, 6px 6px;
-  background-repeat: no-repeat;
+  cursor: pointer;
 }
 
 #prev{ justify-self: start; }
@@ -1203,6 +1202,7 @@ document.getElementById("back-to-selection").addEventListener("click", () => {
   </script>
 </body>
 </html>
+
 
 
 
