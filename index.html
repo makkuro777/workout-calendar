@@ -489,6 +489,23 @@ td.empty {
 }
 td.empty:hover { background: transparent !important; }
 
+    .stopwatch{
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+
+  font-size: 14px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid #ddd;
+
+  user-select: none;
+  cursor: pointer;
+}
+
   </style>
 </head>
 
@@ -547,6 +564,7 @@ td.empty:hover { background: transparent !important; }
       <div class="header">
         <button id="back-to-selection" class="back-btn">← 戻る</button>
         <div class="title">セット入力</div>
+        <div id="stopwatch" class="stopwatch">00:00</div>
       </div>
       <div id="detail-title" class="detail-title"></div>
       <div id="sets-editor" class="sets-editor"></div>
@@ -1201,9 +1219,61 @@ document.getElementById("fab-add").addEventListener("click", () => {
 // セット入力 → 戻る → ワークアウト（選択画面は経由しない）
 document.getElementById("back-to-selection").addEventListener("click", () => {
   saveDetailDraft();     // 入力途中も保存
+    stopStopwatch();
   showScreen("workout"); // ワークアウトへ戻る
   renderWorkoutList();   // 一覧更新
   renderCalendar();      // 点も更新
+});
+// ===== Stopwatch (Detail screen) =====
+const stopwatchEl = document.getElementById("stopwatch");
+
+let stopwatchTime = 0;      // 秒
+let stopwatchTimer = null;
+let lastTapTime = 0;
+
+function formatTime(sec){
+  const m = String(Math.floor(sec / 60)).padStart(2, "0");
+  const s = String(sec % 60).padStart(2, "0");
+  return `${m}:${s}`;
+}
+
+function startStopwatch(){
+  if (stopwatchTimer) return;
+  stopwatchTimer = setInterval(() => {
+    stopwatchTime++;
+    stopwatchEl.textContent = formatTime(stopwatchTime);
+  }, 1000);
+}
+
+function stopStopwatch(){
+  clearInterval(stopwatchTimer);
+  stopwatchTimer = null;
+}
+
+function resetStopwatch(){
+  stopStopwatch();
+  stopwatchTime = 0;
+  stopwatchEl.textContent = "00:00";
+}
+
+stopwatchEl.addEventListener("click", () => {
+  const now = Date.now();
+
+  // ダブルタップ判定（300ms以内）
+  if (now - lastTapTime < 300) {
+    resetStopwatch();
+    lastTapTime = 0;
+    return;
+  }
+
+  lastTapTime = now;
+
+  // シングルタップ：スタート / ストップ
+  if (stopwatchTimer) {
+    stopStopwatch();
+  } else {
+    startStopwatch();
+  }
 });
 
     /* ------------------------
@@ -1214,6 +1284,7 @@ document.getElementById("back-to-selection").addEventListener("click", () => {
   </script>
 </body>
 </html>
+
 
 
 
