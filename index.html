@@ -243,6 +243,14 @@ body {
       gap: 6px;
       align-items: center;
     }
+    .set-number{
+  width: 28px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 16px;
+  color: #666;
+  flex-shrink: 0;
+}
     .set-row-edit input, .set-row-edit select {
       flex: 1;
       padding: 8px;
@@ -1113,37 +1121,64 @@ calendarScreen.addEventListener("pointercancel", () => {
       clearTimeout(saveDraftTimer);
       saveDraftTimer = setTimeout(saveDetailDraft, 300);
     }
+function updateSetNumbers() {
+  document
+    .querySelectorAll("#sets-editor .set-row-edit")
+    .forEach((row, index) => {
+      row.querySelector(".set-number").textContent = index + 1;
+    });
+}
+ function createSetEditorRow(setData, onChange) {
+  const row = document.createElement("div");
+  row.className = "set-row-edit";
 
-    function createSetEditorRow(setData, onChange) {
-      const row = document.createElement("div");
-      row.className = "set-row-edit";
+  // セット番号
+  const setNumber = document.createElement("div");
+  setNumber.className = "set-number";
 
-const weight = document.createElement("input");
-weight.type = "text";                 // ← numberだと挙動が微妙な端末があるので text 推奨
-weight.inputMode = "decimal";         // ← 数字キーボード（小数点あり）
-weight.pattern = "[0-9]*\\.?[0-9]*";  // ← 入力制限のヒント
-weight.placeholder = "重量(kg)";
-      weight.value = setData.weight || "";
-      weight.addEventListener("input", onChange);
+  const weight = document.createElement("input");
+  weight.type = "text";
+  weight.inputMode = "decimal";
+  weight.pattern = "[0-9]*\\.?[0-9]*";
+  weight.placeholder = "重量(kg)";
+  weight.value = setData.weight || "";
+  weight.addEventListener("input", onChange);
 
-      const reps = document.createElement("select");
-      reps.innerHTML = `<option value="">レップ数</option>` + Array.from({length:30}, (_,i)=>`<option value="${i+1}" ${setData.reps==i+1?"selected":""}>${i+1}回</option>`).join("");
-      reps.addEventListener("change", onChange);
+  const reps = document.createElement("select");
+  reps.innerHTML =
+    `<option value="">レップ数</option>` +
+    Array.from(
+      { length: 30 },
+      (_, i) =>
+        `<option value="${i + 1}" ${
+          setData.reps == i + 1 ? "selected" : ""
+        }>${i + 1}回</option>`
+    ).join("");
+  reps.addEventListener("change", onChange);
 
-      const del = document.createElement("button");
-      del.className = "remove-set";
-      del.textContent = "削除";
-      del.addEventListener("click", () => {
-        row.remove();
-        onChange();
-      });
+  const del = document.createElement("button");
+  del.className = "remove-set";
+  del.textContent = "削除";
+  del.addEventListener("click", () => {
+    row.remove();
+    updateSetNumbers();
+    onChange();
+  });
 
-      row.appendChild(weight);
-      row.appendChild(reps);
-      row.appendChild(del);
-      return row;
-    }
+  row.appendChild(setNumber);
+  row.appendChild(weight);
+  row.appendChild(reps);
+  row.appendChild(del);
 
+  return row;
+}
+function updateSetNumbers() {
+  document
+    .querySelectorAll("#sets-editor .set-row-edit")
+    .forEach((row, index) => {
+      row.querySelector(".set-number").textContent = index + 1;
+    });
+}
     function openDetailEditor(exercise, index) {
   // 種目名を先に確定
   pendingExerciseName = exercise.exercise || pendingExerciseName || "";
@@ -1175,6 +1210,7 @@ weight.placeholder = "重量(kg)";
     const row = createSetEditorRow(s, scheduleSaveDetailDraft);
     setsEditor.appendChild(row);
   });
+  updateSetNumbers();
   detailDeleteBtn.style.display = (editingIndex !== null) ? "inline-flex" : "none";
   showScreen("detail");
 }
@@ -1182,6 +1218,9 @@ weight.placeholder = "重量(kg)";
          document.getElementById("detail-add-set").addEventListener("click", () => {
      const row = createSetEditorRow({weight:"", reps:""}, scheduleSaveDetailDraft);
 setsEditor.appendChild(row);
+
+updateSetNumbers();
+           
 scheduleSaveDetailDraft();
     });
 
