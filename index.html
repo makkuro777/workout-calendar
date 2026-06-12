@@ -1215,7 +1215,7 @@ function updateSetNumbers() {
   if (index === null || index === undefined || index < 0) {
     const draft = {
       exercise: pendingExerciseName,
-      sets: (exercise.sets && exercise.sets.length) ? exercise.sets : [{ weight: "", reps: "" }]
+      sets: (exercise.sets && exercise.sets.length) ? exercise.sets : [{ weight: "", reps: "" }],
        memo: ""
     };
     exercisesForDate.push(draft);
