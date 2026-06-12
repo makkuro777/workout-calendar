@@ -513,7 +513,25 @@ td.empty:hover { background: transparent !important; }
   user-select: none;
   cursor: pointer;
 }
+.memo-section {
+  margin-top: 16px;
+}
 
+.memo-label {
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.memo-input {
+  width: 100%;
+  min-height: 100px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  font-size: 14px;
+  resize: vertical;
+  font-family: inherit;
+}
   </style>
 </head>
 
@@ -577,6 +595,14 @@ td.empty:hover { background: transparent !important; }
       <div id="detail-title" class="detail-title"></div>
       <div id="sets-editor" class="sets-editor"></div>
       <button id="detail-add-set" class="add-set">＋ セットを追加</button>
+      <div class="memo-section">
+  <div class="memo-label">メモ</div>
+  <textarea
+    id="detail-memo"
+    class="memo-input"
+    placeholder="フォームの感覚、RPE、痛み、次回の目標など"
+  ></textarea>
+</div>
       <div class="detail-actions">
         <button id="detail-save" class="primary-btn">保存</button>
         <button id="detail-delete" class="danger-btn" style="display:none;">削除</button>
@@ -617,11 +643,12 @@ td.empty:hover { background: transparent !important; }
     const selectionList = document.getElementById("selection-list");
     const detailTitle = document.getElementById("detail-title");
     const setsEditor = document.getElementById("sets-editor");
+    const detailMemo = document.getElementById("detail-memo");
     const detailDeleteBtn = document.getElementById("detail-delete");
 
     const exerciseCategories = [
       { label: "胸", color: "#e91e63", items: ["ベンチプレス", "ダンベルプレス", "インクラインダンベルプレス", "ディップス", "インクラインスミスプレス", "ペックフライ"] },
-      { label: "背中", color: "#3f51b5", items: ["懸垂", "ラットプルダウン", "シーテッドロー", "デッドリフト"] },
+      { label: "背中", color: "#3f51b5", items: ["懸垂", "ラットプルダウン", "シーテッドロー", "デッドリフト", "ワンハンドダンベルロー"] },
       { label: "脚", color: "#4caf50", items: ["スクワット", "ルーマニアンデッドリフト", "ブルガリアンスクワット", "ヒップアダクション"] },
       { label: "肩", color: "#ff9800", items: ["ショルダープレス", "フェイスプル",  "リアデルト", "サイドレイズ"] },
       { label: "腕", color: "#9c27b0", items: ["インクラインダンベルカール", "ケーブルプレスダウン", "オーバーヘッドエクステンション"] },
@@ -1205,6 +1232,7 @@ function updateSetNumbers() {
   // 以降は今まで通り画面を描画
   detailTitle.textContent = pendingExerciseName || "種目";
   setsEditor.innerHTML = "";
+  detailMemo.value = exercise.memo || "";
   const sets = exercise.sets && exercise.sets.length ? exercise.sets : [{weight:"", reps:""}];
   sets.forEach(s => {
     const row = createSetEditorRow(s, scheduleSaveDetailDraft);
