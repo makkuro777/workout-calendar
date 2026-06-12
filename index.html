@@ -1137,7 +1137,8 @@ calendarScreen.addEventListener("pointercancel", () => {
       if (!pendingExerciseName || !selectedDateKey) return;
       if (editingIndex === null || editingIndex === undefined || editingIndex < 0) return;
       const sets = collectSetsFromUI();
-      exercisesForDate[editingIndex] = { exercise: pendingExerciseName, sets };
+      exercisesForDate[editingIndex] = { exercise: pendingExerciseName,sets,
+                                         memo: detailMemo.value};
       events[selectedDateKey] = { exercises: exercisesForDate };
       saveEvents();
       renderWorkoutList();
@@ -1215,6 +1216,7 @@ function updateSetNumbers() {
     const draft = {
       exercise: pendingExerciseName,
       sets: (exercise.sets && exercise.sets.length) ? exercise.sets : [{ weight: "", reps: "" }]
+       memo: ""
     };
     exercisesForDate.push(draft);
     editingIndex = exercisesForDate.length - 1;
