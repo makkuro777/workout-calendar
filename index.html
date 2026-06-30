@@ -532,6 +532,32 @@ td.empty:hover { background: transparent !important; }
   resize: vertical;
   font-family: inherit;
 }
+    .previous-box{
+  margin-bottom:12px;
+  border:1px solid #ddd;
+  border-radius:10px;
+  background:#fafafa;
+}
+
+.previous-toggle{
+  width:100%;
+  border:none;
+  background:none;
+  padding:10px;
+  text-align:left;
+  font-weight:700;
+  cursor:pointer;
+}
+
+.previous-content{
+  padding:0 10px 10px;
+  font-size:14px;
+  color:#555;
+}
+
+.previous-content.hidden{
+  display:none;
+}
   </style>
 </head>
 
@@ -593,6 +619,13 @@ td.empty:hover { background: transparent !important; }
         <div id="stopwatch" class="stopwatch">00:00</div>
       </div>
       <div id="detail-title" class="detail-title"></div>
+      <div class="previous-box">
+  <button id="previous-toggle" class="previous-toggle">
+    ▼ 前回の記録
+  </button>
+
+  <div id="previous-content" class="previous-content"></div>
+</div>
       <div id="sets-editor" class="sets-editor"></div>
       <button id="detail-add-set" class="add-set">＋ セットを追加</button>
       <div class="memo-section">
@@ -1200,13 +1233,28 @@ function updateSetNumbers() {
 
   return row;
 }
-function updateSetNumbers() {
-  document
-    .querySelectorAll("#sets-editor .set-row-edit")
-    .forEach((row, index) => {
-      row.querySelector(".set-number").textContent = index + 1;
-    });
+    function getPreviousExercise(exerciseName) {
+  const dates = Object.keys(events).sort().reverse();
+
+  for (const date of dates) {
+    if (date === selectedDateKey) continue;
+
+    const data = normalizeEvent(events[date]);
+
+    const ex = data.exercises.find(e => e.exercise === exerciseName);
+
+    if (ex) {
+      return {
+        date,
+        sets: ex.sets
+      };
+    }
+  }
+
+  return null;
 }
+
+
     function openDetailEditor(exercise, index) {
   // 種目名を先に確定
   pendingExerciseName = exercise.exercise || pendingExerciseName || "";
@@ -1233,6 +1281,19 @@ function updateSetNumbers() {
 
   // 以降は今まで通り画面を描画
   detailTitle.textContent = pendingExerciseName || "種目";
+      const prev = getPreviousExercise(pendingExerciseName);
+
+const previousContent = document.getElementById("previous-content");
+
+if (prev) {
+  previousContent.innerHTML =
+    `<div style="margin-bottom:6px;">${prev.date.replace(/-/g,"/")}</div>` +
+    prev.sets.map((s,i)=>
+      `${i+1}. ${s.weight}kg × ${s.reps}回`
+    ).join("<br>");
+} else {
+  previousContent.textContent = "前回の記録はありません";
+}
   setsEditor.innerHTML = "";
   detailMemo.value = exercise.memo || "";
   const sets = exercise.sets && exercise.sets.length ? exercise.sets : [{weight:"", reps:""}];
@@ -1350,6 +1411,17 @@ stopwatchEl.addEventListener("click", () => {
     ------------------------ */
     
     renderCalendar();
+    const toggle = document.getElementById("previous-toggle");
+const content = document.getElementById("previous-content");
+
+toggle.addEventListener("click", () => {
+  content.classList.toggle("hidden");
+
+  toggle.textContent =
+    content.classList.contains("hidden")
+      ? "▶ 前回の記録"
+      : "▼ 前回の記録";
+});
   </script>
 </body>
 </html>
